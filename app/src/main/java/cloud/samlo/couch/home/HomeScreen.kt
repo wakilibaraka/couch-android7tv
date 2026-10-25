@@ -22,6 +22,7 @@ import cloud.samlo.couch.data.Wallpapers
 import cloud.samlo.couch.data.Weather
 import cloud.samlo.couch.data.WeatherNow
 import cloud.samlo.couch.settings.SettingsActivity
+import cloud.samlo.couch.ui.SkyOverlay
 import cloud.samlo.couch.ui.Tokens
 import cloud.samlo.couch.update.Installer
 import cloud.samlo.couch.update.Release
@@ -38,6 +39,16 @@ class HomeScreen(private val activity: Activity) {
     private val images = Images(activity, fetcher)
     private val views: HomeViews = HomeViews(
         activity, images, { openSettings() }, { installUpdate() },
+        SkyOverlay.Actions(
+            settings = { openSettings() },
+            reload = { load() },
+            photoOnly = { ambientMode.showNow() },
+            toggleClock = {
+                config.clock24h = !config.clock24h
+                config.save(files.dir)
+                load()
+            },
+        ),
         onAppMenu = { menus.show(it) },
         onProgramMenu = { menus.show(it) },
     )
@@ -133,6 +144,7 @@ class HomeScreen(private val activity: Activity) {
 
     /** True when the key was consumed (waking from ambient, or reorder mode). */
     fun consumesKey(event: KeyEvent) = ambientMode.consumesKey(event) || organizer.consumesKey(event) ||
+        (views.skyShown && views.sky.consumesKey(event)) ||
         (views.indexShown && views.index.consumesKey(event))
 
     private fun onLoaded(data: HomeData) {

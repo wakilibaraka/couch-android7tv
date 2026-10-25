@@ -87,10 +87,15 @@ class HomeLoader(
         // Weather first: the sky wallpaper is picked to match it.
         val now = weather.now(config)
         val wallpaper = wallpapers.current(config, files.dir, now)
-        val pictures = if (config.ambientMinutes > 0) wallpapers.all(config, files.dir, now) else emptyList()
         val sky = config.layout == Config.LAYOUT_SKY
+        // Sky can show the photo on demand, so it always has the list.
+        val pictures = if (config.ambientMinutes > 0 || sky) wallpapers.all(config, files.dir, now) else emptyList()
         val inputs = if (sky) InputSource.tiles(context, config, null) else emptyList()
-        val credit: String? = null
+        val credit = if (sky && wallpaper != null && config.wallpaper == Config.WALLPAPER_SKY) {
+            SkyPhotos.credit(File(wallpaper))
+        } else {
+            null
+        }
         return HomeData(config, wallpaper, pictures, now, sections, index, updates.pending(config), inputs, credit)
     }
 }

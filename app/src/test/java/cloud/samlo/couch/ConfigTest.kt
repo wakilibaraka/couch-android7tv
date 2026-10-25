@@ -16,7 +16,7 @@ class ConfigTest {
     @Test
     fun defaultsAreGeneric() {
         val config = Config()
-        assertTrue(config.pinnedApps.isEmpty())
+        assertEquals(Config.DEFAULT_PINNED, config.pinnedApps)
         assertTrue("com.sony.dtv.promos" in config.hiddenApps)
         assertEquals("medium", config.cardSize)
         assertEquals("sky", config.layout)
