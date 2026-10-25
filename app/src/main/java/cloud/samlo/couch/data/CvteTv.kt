@@ -103,58 +103,46 @@ object CvteTv {
 
     /**
      * Cycles through the TV's hardware picture modes (Standard -> Dynamic -> Mild -> Movie...),
-     * matching the remote's P.MODE key. Delivers the new mode name on the main thread.
+     * matching the remote's P.MODE key. Delivers the new mode name on the main thread, or null
+     * when the TV didn't answer.
      */
-    fun cyclePicture(context: Context, onResult: (String?) -> Unit) {
+    fun cyclePicture(context: Context, onResult: (String?) -> Unit) =
+        cycle(context, "getTVApiPictureControl", "PictureMode", "PICTURE", onResult)
+
+    /**
+     * Cycles through the TV's hardware sound modes (Standard -> Music -> Movie -> Sports...),
+     * matching the remote's S.MODE key. Delivers the new mode name on the main thread, or null
+     * when the TV didn't answer.
+     */
+    fun cycleSound(context: Context, onResult: (String?) -> Unit) =
+        cycle(context, "getTVApiSoundEq", "SoundMode", "SOUND", onResult)
+
+    private fun cycle(context: Context, getter: String, mode: String, prefix: String, onResult: (String?) -> Unit) {
         val app = context.applicationContext
         Thread {
             val name = try {
-                val tv = connect(app) ?: return@Thread
-                val pic = tv.javaClass.getMethod("getTVApiPictureControl").invoke(tv) ?: return@Thread
-                val current = pic.javaClass.getMethod("eventGetCurrentPictureMode").invoke(pic) ?: return@Thread
-                val options = pic.javaClass.getMethod("eventGetPictureModeOptions").invoke(pic) as? List<*> ?: return@Thread
-                if (options.isEmpty()) return@Thread
-                val currentIndex = options.indexOf(current)
-                val nextIndex = if (currentIndex >= 0) (currentIndex + 1) % options.size else 0
-                val next = options[nextIndex] ?: return@Thread
-                pic.javaClass.getMethod("eventSetCurrentPictureMode", next.javaClass).invoke(pic, next)
-                try {
-                    pic.javaClass.getMethod("eventCommitCurrentPictureModeDataAsDefault").invoke(pic)
-                } catch (ignored: Throwable) {}
-                cleanModeName(next.toString(), "PICTURE")
+                nextMode(app, getter, mode, prefix)
             } catch (e: Throwable) {
                 null
             }
+            // Always answer, so the caller can fall back to the TV's settings.
             Handler(Looper.getMainLooper()).post { onResult(name) }
         }.start()
     }
 
-    /**
-     * Cycles through the TV's hardware sound modes (Standard -> Music -> Movie -> Sports...),
-     * matching the remote's S.MODE key. Delivers the new mode name on the main thread.
-     */
-    fun cycleSound(context: Context, onResult: (String?) -> Unit) {
-        val app = context.applicationContext
-        Thread {
-            val name = try {
-                val tv = connect(app) ?: return@Thread
-                val sound = tv.javaClass.getMethod("getTVApiSoundEq").invoke(tv) ?: return@Thread
-                val current = sound.javaClass.getMethod("eventGetCurrentSoundMode").invoke(sound) ?: return@Thread
-                val options = sound.javaClass.getMethod("eventGetSoundModeOptions").invoke(sound) as? List<*> ?: return@Thread
-                if (options.isEmpty()) return@Thread
-                val currentIndex = options.indexOf(current)
-                val nextIndex = if (currentIndex >= 0) (currentIndex + 1) % options.size else 0
-                val next = options[nextIndex] ?: return@Thread
-                sound.javaClass.getMethod("eventSetCurrentSoundMode", next.javaClass).invoke(sound, next)
-                try {
-                    sound.javaClass.getMethod("eventCommitCurrentSoundModeDataAsDefault").invoke(sound)
-                } catch (ignored: Throwable) {}
-                cleanModeName(next.toString(), "SOUND")
-            } catch (e: Throwable) {
-                null
-            }
-            Handler(Looper.getMainLooper()).post { onResult(name) }
-        }.start()
+    private fun nextMode(app: Context, getter: String, mode: String, prefix: String): String? {
+        val tv = connect(app) ?: return null
+        val control = tv.javaClass.getMethod(getter).invoke(tv) ?: return null
+        val cls = control.javaClass
+        val current = cls.getMethod("eventGetCurrent$mode").invoke(control) ?: return null
+        val options = cls.getMethod("eventGet${mode}Options").invoke(control) as? List<*> ?: return null
+        if (options.isEmpty()) return null
+        val next = options[(options.indexOf(current) + 1) % options.size] ?: return null
+        // The enum's declared class, in case a constant has a body subclass.
+        val type = next.javaClass.let { if (next is Enum<*> && !it.isEnum) it.superclass else it }
+        // Only the mode is set: committing "as default" could overwrite the owner's custom values.
+        cls.getMethod("eventSetCurrent$mode", type).invoke(control, next)
+        return cleanModeName(next.toString(), prefix)
     }
 
     private fun cleanModeName(raw: String, prefix: String): String {
