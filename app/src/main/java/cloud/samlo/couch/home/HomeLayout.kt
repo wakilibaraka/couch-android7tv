@@ -79,8 +79,13 @@ class HomeViews(
         sky.dock.visibility = if (show) View.VISIBLE else View.GONE
         topBar.visibility = if (show) View.GONE else View.VISIBLE
         hero.setSky(show)
-        (rows.layoutParams as FrameLayout.LayoutParams).topMargin =
-            rows.context.dp(if (show) Tokens.SKY_ROWS_TOP else Tokens.ROWS_TOP)
+        (rows.layoutParams as FrameLayout.LayoutParams).apply {
+            topMargin = rows.context.dp(if (show) Tokens.SKY_ROWS_TOP else Tokens.ROWS_TOP)
+            // Sky: cards scrolling past the dock's glass are cut at its edges, not drawn over the photo.
+            val inset = if (show) rows.context.dp(DOCK_INSET) else 0
+            leftMargin = inset
+            rightMargin = inset
+        }
         rows.requestLayout()
         setSectionTitles(!show)
     }
@@ -88,6 +93,11 @@ class HomeViews(
     /** Sky has no row titles: the dock speaks for itself, as on Apple TV. */
     fun setSectionTitles(shown: Boolean) {
         for (section in rows.sections()) section.title.visibility = if (shown) View.VISIBLE else View.GONE
+    }
+
+    companion object {
+        /** The dock's glass edge, in from the screen's sides. */
+        const val DOCK_INSET = Tokens.OVERSCAN_H - 18
     }
 
     private fun placeDock() {

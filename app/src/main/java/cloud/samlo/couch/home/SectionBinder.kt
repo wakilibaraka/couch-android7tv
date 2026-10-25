@@ -3,6 +3,7 @@ package cloud.samlo.couch.home
 import android.app.Activity
 import cloud.samlo.couch.data.Config
 import cloud.samlo.couch.ui.Tokens
+import cloud.samlo.couch.ui.dp
 import cloud.samlo.couch.data.Images
 import cloud.samlo.couch.data.Tile
 import cloud.samlo.couch.ui.Card
@@ -49,6 +50,9 @@ class SectionBinder(
         // The sky dock's glow is part of the look, so turning it on or off redraws the cards.
         val glow = config.layout == Config.LAYOUT_SKY && config.dockGlow
         val look = "${d.w}|${d.h}|${config.look}|$glow"
+        // Sky rows sit inside the dock's glass: 18dp of glass each side of the first and last card.
+        val pad = if (config.layout == Config.LAYOUT_SKY) Tokens.OVERSCAN_H - HomeViews.DOCK_INSET else Tokens.OVERSCAN_H
+        section.row.setStartPadding(activity.dp(pad - Tokens.RING_INSET))
         section.row.update(d.tiles, look) { card(it, d.w, d.h, look, config).apply { if (glow) setGlow(Tokens.CARD_RADIUS) } }
         section.signature = d.signature
     }

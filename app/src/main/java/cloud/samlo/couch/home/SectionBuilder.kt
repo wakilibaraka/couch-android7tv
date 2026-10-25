@@ -26,7 +26,8 @@ object SectionBuilder {
         val size = { w: Int, h: Int -> (w * scale).toInt() to (h * scale).toInt() }
         val byId = LinkedHashMap<String, SectionData>()
 
-        val (appW, appH) = size(Tokens.APP_W, Tokens.APP_H)
+        // Sky: exactly five cards across the dock, gaps included, so it reads as one even shelf.
+        val (appW, appH) = if (config.layout == Config.LAYOUT_SKY) SKY_APP_W to SKY_APP_H else size(Tokens.APP_W, Tokens.APP_H)
         val apps = AppSource.tiles(context, config, iconsDir, context.dp(appW), context.dp(appH))
         byId[Sections.APPS] = SectionData(Sections.APPS, context.getString(R.string.section_apps), apps, appW, appH, config.look)
 
@@ -56,4 +57,7 @@ object SectionBuilder {
             .filter { it !in config.hiddenSections }
             .map { byId.getValue(it) }
     }
+
+    private const val SKY_APP_W = 160
+    private const val SKY_APP_H = 90
 }

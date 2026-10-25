@@ -23,7 +23,16 @@ class Wallpapers(private val fetcher: Fetcher, private val prefs: SharedPreferen
     }
 
     /** Every candidate for the source, for ambient mode to cycle through. */
-    fun all(config: Config, userDir: File?, weather: WeatherNow? = null): List<String> = when (config.wallpaper) {
+    fun all(config: Config, userDir: File?, weather: WeatherNow? = null): List<String> =
+        art(userDir).ifEmpty { sources(config, userDir, weather) }
+
+    /** Paintings saved in files/art, shown by ambient mode before any other source. */
+    private fun art(userDir: File?): List<String> =
+        userDir?.let { File(it, "art").listFiles() }.orEmpty()
+            .filter { it.isFile && it.extension.lowercase() in setOf("jpg", "jpeg", "png", "webp") }
+            .map { it.path }.shuffled()
+
+    private fun sources(config: Config, userDir: File?, weather: WeatherNow?): List<String> = when (config.wallpaper) {
         "reddit" -> redditList(config.subreddit).ifEmpty { listOfNotNull(daily()) }
         Config.WALLPAPER_SKY -> skyList(config, userDir, weather).map { it.path }.ifEmpty { listOfNotNull(daily()) }
         else -> listOfNotNull(current(config, userDir, weather))
