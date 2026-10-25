@@ -246,14 +246,18 @@
     <string name="layout_sky">Sky</string>
     <string name="wallpaper_sky">Sky (matches the weather)</string>
     <string name="sky_inputs">Inputs</string>
-    <string name="sky_clock">Clock</string>
-    <string name="sky_clock_24">24-hour</string>
-    <string name="sky_clock_12">12-hour</string>
-    <string name="sky_tv_menu">TV menu</string>
-    <string name="sky_tv_menu_sub">Picture and sound</string>
-    <string name="sky_photo_only">Show the photo</string>
     <string name="sky_refresh">Refresh</string>
     <string name="sky_volume">Volume</string>
     <string name="sky_degrees">%1$d°</string>
     <string name="sky_range">H %1$d°  L %2$d°</string>
+    <string name="sky_theme">Photo theme</string>
+    <string name="sky_theme_weather">Weather sky</string>
+    <string name="sky_next_photo">Next photo</string>
+    <string name="sky_home">Home</string>
+    <string name="sky_mute">Mute</string>
+    <string name="sky_rain">%1$d%%</string>
+    <string name="dock_glow">App glow</string>
+    <string name="dock_glow_help">A soft glow under the apps in the dock</string>
+    <string name="sky_wifi_on">%1$s · Connected</string>
+    <string name="sky_files">Files</string>
 </resources>

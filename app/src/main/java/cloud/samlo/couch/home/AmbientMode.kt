@@ -38,12 +38,6 @@ class AmbientMode(
         main.postDelayed(enter, (due - now).coerceAtLeast(0L))
     }
 
-    /** Shows the photo now, without waiting for idle: any key brings home back. */
-    fun showNow() {
-        main.removeCallbacks(enter)
-        if (isResumed() && !isOrganizing()) ambient.show(pictures, weatherLine)
-    }
-
     /** Leaving home: no timer, no overlay. */
     fun cancel() {
         main.removeCallbacks(enter)

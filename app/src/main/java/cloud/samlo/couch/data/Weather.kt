@@ -12,8 +12,8 @@ class Weather(private val fetcher: Fetcher, private val prefs: SharedPreferences
 
     fun now(config: Config): WeatherNow? {
         if (!config.weather) return null
-        // v3: answers now carry the days ahead.
-        val cacheKey = "weather3:${config.weatherCity}:${config.fahrenheit}"
+        // v4: answers now carry the days and hours ahead.
+        val cacheKey = "weather4:${config.weatherCity}:${config.fahrenheit}"
         val cachedAt = prefs.getLong("$cacheKey:at", 0L)
         if (System.currentTimeMillis() - cachedAt < FRESH_MS) cached(cacheKey)?.let { return it }
         val place = places.find(config.weatherCity) ?: return cached(cacheKey)
@@ -29,7 +29,8 @@ class Weather(private val fetcher: Fetcher, private val prefs: SharedPreferences
         val unit = if (fahrenheit) "&temperature_unit=fahrenheit" else ""
         return "https://api.open-meteo.com/v1/forecast?latitude=${place.latitude}&longitude=${place.longitude}" +
             "&current=temperature_2m,weather_code,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min," +
-            "precipitation_probability_max,sunrise,sunset&forecast_days=6&timezone=auto$unit"
+            "precipitation_probability_max,sunrise,sunset&forecast_days=8" +
+            "&hourly=temperature_2m,weather_code,precipitation_probability,is_day&forecast_hours=9&timezone=auto$unit"
     }
 
     private companion object {

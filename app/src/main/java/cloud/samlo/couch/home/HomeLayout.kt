@@ -100,7 +100,6 @@ class HomeViews(
         params.topMargin = top
         params.height = height
         sky.dock.layoutParams = params
-        sky.placeCredit(rows.top + first.top + first.row.top - pad)
     }
 
     /** True when the Index layout is the one showing. */

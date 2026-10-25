@@ -9,6 +9,11 @@ class WeatherDay(val date: String, val code: Int, val high: Int, val low: Int, v
     val condition: Condition get() = Condition.of(code)
 }
 
+/** One hour ahead: [hour] is the local hour of day, 0 to 23. */
+class WeatherHour(val hour: Int, val code: Int, val temperature: Int, val rainChance: Int, val isDay: Boolean) {
+    val icon: Int get() = Condition.of(code).icon(isDay)
+}
+
 /** Current conditions at [place], plus today's range and the days ahead. */
 class WeatherNow(
     val place: String,
@@ -22,6 +27,8 @@ class WeatherNow(
     val sunset: Int = -1,
     /** Today first, then the days ahead; empty when the answer had no forecast. */
     val days: List<WeatherDay> = emptyList(),
+    /** The next hours, soonest first; empty when the answer had none. */
+    val hours: List<WeatherHour> = emptyList(),
 ) {
     val condition: Condition get() = Condition.of(code)
     val icon: Int get() = condition.icon(isDay)
@@ -32,6 +39,9 @@ class WeatherNow(
         .put("code", code).put("day", isDay).put("rise", sunrise).put("set", sunset)
         .put("days", JSONArray(days.map {
             JSONObject().put("d", it.date).put("c", it.code).put("hi", it.high).put("lo", it.low).put("p", it.rainChance)
+        }))
+        .put("hours", JSONArray(hours.map {
+            JSONObject().put("h", it.hour).put("c", it.code).put("t", it.temperature).put("p", it.rainChance).put("d", it.isDay)
         })).toString()
 
     companion object {
@@ -44,6 +54,12 @@ class WeatherNow(
                     (0 until a.length()).map { i ->
                         val d = a.getJSONObject(i)
                         WeatherDay(d.getString("d"), d.getInt("c"), d.getInt("hi"), d.getInt("lo"), d.optInt("p", -1))
+                    }
+                }.orEmpty(),
+                o.optJSONArray("hours")?.let { a ->
+                    (0 until a.length()).map { i ->
+                        val h = a.getJSONObject(i)
+                        WeatherHour(h.getInt("h"), h.getInt("c"), h.getInt("t"), h.optInt("p", -1), h.optBoolean("d", true))
                     }
                 }.orEmpty(),
             )
@@ -66,9 +82,30 @@ class WeatherNow(
                 sunrise = minutes(daily.optJSONArray("sunrise")?.optString(0)),
                 sunset = minutes(daily.optJSONArray("sunset")?.optString(0)),
                 days = days(daily),
+                hours = o.optJSONObject("hourly")?.let { hours(it, current.optString("time")) }.orEmpty(),
             )
         } catch (e: Exception) {
             null
+        }
+
+        /** Up to [count] whole hours after the current one. */
+        fun hours(hourly: JSONObject, now: String?, count: Int = 7): List<WeatherHour> {
+            val times = hourly.optJSONArray("time") ?: return emptyList()
+            val temps = hourly.optJSONArray("temperature_2m") ?: return emptyList()
+            val codes = hourly.optJSONArray("weather_code") ?: return emptyList()
+            val rain = hourly.optJSONArray("precipitation_probability")
+            val day = hourly.optJSONArray("is_day")
+            // ISO local times sort as text: the first hour after "now" is where the list starts.
+            val from = (0 until times.length()).firstOrNull { now.isNullOrEmpty() || times.getString(it) > now } ?: return emptyList()
+            return (from until minOf(times.length(), from + count)).mapNotNull { i ->
+                if (temps.isNull(i) || codes.isNull(i)) return@mapNotNull null
+                val hour = times.getString(i).substringAfter('T').substringBefore(':').toIntOrNull() ?: return@mapNotNull null
+                WeatherHour(
+                    hour, codes.getInt(i), temps.getDouble(i).roundToInt(),
+                    if (rain == null || rain.isNull(i)) -1 else rain.getInt(i),
+                    day == null || day.isNull(i) || day.getInt(i) == 1,
+                )
+            }
         }
 
         private fun days(daily: JSONObject): List<WeatherDay> {

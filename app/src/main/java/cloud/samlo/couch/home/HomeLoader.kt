@@ -31,8 +31,6 @@ class HomeData(
     val update: Release?,
     /** The sky layout's input pills. */
     val inputs: List<Tile> = emptyList(),
-    /** Who took the sky photo showing, when a credit file sits beside it. */
-    val credit: String? = null,
 )
 
 /**
@@ -88,14 +86,8 @@ class HomeLoader(
         val now = weather.now(config)
         val wallpaper = wallpapers.current(config, files.dir, now)
         val sky = config.layout == Config.LAYOUT_SKY
-        // Sky can show the photo on demand, so it always has the list.
-        val pictures = if (config.ambientMinutes > 0 || sky) wallpapers.all(config, files.dir, now) else emptyList()
+        val pictures = if (config.ambientMinutes > 0) wallpapers.all(config, files.dir, now) else emptyList()
         val inputs = if (sky) InputSource.tiles(context, config, null) else emptyList()
-        val credit = if (sky && wallpaper != null && config.wallpaper == Config.WALLPAPER_SKY) {
-            SkyPhotos.credit(File(wallpaper))
-        } else {
-            null
-        }
-        return HomeData(config, wallpaper, pictures, now, sections, index, updates.pending(config), inputs, credit)
+        return HomeData(config, wallpaper, pictures, now, sections, index, updates.pending(config), inputs)
     }
 }

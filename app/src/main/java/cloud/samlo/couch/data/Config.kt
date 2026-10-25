@@ -38,6 +38,10 @@ class Config {
     var showDescriptions = true
     var clock24h = true
     var showDate = true
+    /** The sky layout's photo collection: "sky" follows the weather, any other is a folder in `themes/`. */
+    /** A soft glow under the sky dock's app cards. */
+    var dockGlow = true
+    var photoTheme = SkyPhotos.WEATHER_THEME
 
     // Wallpaper: "sky" (photos matched to the weather, from sky/), "daily" (Bing photo of the day),
     // "reddit", "gradient" or "custom" (wallpaper.jpg)

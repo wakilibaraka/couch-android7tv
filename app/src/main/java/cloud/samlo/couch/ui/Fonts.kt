@@ -13,9 +13,9 @@ object Fonts {
     private val cache = HashMap<Int, Typeface>()
     private var clockFace: Typeface? = null
 
-    /** Righteous (OFL), the sky layout's clock face; the system font if the asset can't load. */
+    /** Nunito Black (OFL), the sky layout's clock face; the system font if the asset can't load. */
     fun clock(context: Context): Typeface = clockFace ?: (try {
-        Typeface.createFromAsset(context.assets, "fonts/righteous.ttf")
+        Typeface.createFromAsset(context.assets, "fonts/nunito_black.ttf")
     } catch (e: Exception) {
         Typeface.create("sans-serif-medium", Typeface.NORMAL)
     }).also { clockFace = it }

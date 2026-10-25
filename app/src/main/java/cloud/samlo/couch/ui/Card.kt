@@ -2,6 +2,8 @@ package cloud.samlo.couch.ui
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.view.ViewOutlineProvider
+import android.graphics.Outline
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.LayerDrawable
 import android.view.Gravity
@@ -72,6 +74,19 @@ class Card(
         setDimmed(tile.dimmed)
     }
 
+    /**
+     * A soft shadow under the art, the sky dock's glow: hardware elevation, so it costs one
+     * blurred outline the GPU draws anyway, not a layer.
+     */
+    fun setGlow(radiusDp: Float) {
+        val r = context.dpf(radiusDp)
+        content.outlineProvider = object : ViewOutlineProvider() {
+            override fun getOutline(view: View, outline: Outline) = outline.setRoundRect(0, 0, view.width, view.height, r)
+        }
+        content.elevation = context.dpf(GLOW_DP)
+        clipChildren = false
+    }
+
     private fun belowLabel(inset: Int, height: Int) =
         cardLabel(context, tile.label, 13f, Tokens.textMuted).apply {
             layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, height, Gravity.BOTTOM).apply {
@@ -126,6 +141,7 @@ class Card(
             keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER
 
     private companion object {
+        const val GLOW_DP = 12f
         const val LABEL_DP = 24
     }
 }

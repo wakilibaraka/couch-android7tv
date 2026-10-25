@@ -16,6 +16,7 @@ import cloud.samlo.couch.data.Fetcher
 import cloud.samlo.couch.data.Images
 import cloud.samlo.couch.data.InputSource
 import cloud.samlo.couch.data.Prefs
+import cloud.samlo.couch.data.SkyPhotos
 import cloud.samlo.couch.data.Programs
 import cloud.samlo.couch.data.UserFiles
 import cloud.samlo.couch.data.Wallpapers
@@ -42,9 +43,14 @@ class HomeScreen(private val activity: Activity) {
         SkyOverlay.Actions(
             settings = { openSettings() },
             reload = { load() },
-            photoOnly = { ambientMode.showNow() },
-            toggleClock = {
-                config.clock24h = !config.clock24h
+            nextPhoto = {
+                SkyPhotos.shift++
+                load()
+            },
+            home = { onHomePressed() },
+            nextTheme = {
+                val themes = SkyPhotos.themes(files.dir)
+                config.photoTheme = themes[(themes.indexOf(config.photoTheme) + 1) % themes.size]
                 config.save(files.dir)
                 load()
             },
@@ -166,7 +172,6 @@ class HomeScreen(private val activity: Activity) {
         switchLayout(index != null)
         views.showSky(index == null && config.layout == Config.LAYOUT_SKY)
         views.sky.showInputs(data.inputs)
-        views.sky.showCredit(data.credit)
         if (index != null) views.index.bind(index, config) else binder.bind(data.sections, config)
         if (views.skyShown) views.setSectionTitles(false)
         ambientMode.schedule()
