@@ -11,6 +11,30 @@ import java.util.Calendar
  */
 object SkyPhotos {
     const val DIR = "sky"
+    const val THEMES_DIR = "themes"
+    const val WEATHER_THEME = "sky"
+
+    /** Steps ahead of the hour's photo, from the "next photo" button; the app's lifetime only. */
+    @Volatile
+    var shift = 0
+
+    /** "sky" first, then each non-empty folder in `themes/`, by name. */
+    fun themes(userDir: File?): List<String> = listOf(WEATHER_THEME) + (
+        userDir?.let { File(it, THEMES_DIR).listFiles() }
+            ?.filter { dir -> dir.isDirectory && dir.listFiles()?.any { it.isFile && it.extension.lowercase() in EXTENSIONS } == true }
+            ?.map { it.name }?.sorted().orEmpty()
+        )
+
+    /** A themed collection's photos, by name; empty when the folder is. */
+    fun themePhotos(userDir: File?, theme: String): List<File> =
+        userDir?.let { File(File(it, THEMES_DIR), theme).listFiles() }
+            ?.filter { it.isFile && it.extension.lowercase() in EXTENSIONS }
+            ?.sortedBy { it.name }.orEmpty()
+
+    /** The hour's photo of [photos], moved on by [shift]. */
+    fun ofHour(photos: List<File>, now: Long = System.currentTimeMillis()): File? =
+        if (photos.isEmpty()) null else photos[(((now / HOUR_MS) + shift) % photos.size).toInt()]
+
     val TIMES = listOf("dawn", "day", "dusk", "night")
     val WEATHERS = listOf("clear", "cloudy", "rain", "storm", "fog")
     private val EXTENSIONS = setOf("jpg", "jpeg", "png", "webp")
@@ -21,9 +45,7 @@ object SkyPhotos {
 
     /** The photo for now, or null when the folders are empty. */
     fun pick(userDir: File?, weather: WeatherNow?, now: Long = System.currentTimeMillis()): File? {
-        val photos = photos(userDir, weather, now)
-        if (photos.isEmpty()) return null
-        return photos[((now / HOUR_MS) % photos.size).toInt()]
+        return ofHour(photos(userDir, weather, now), now)
     }
 
     /** Every photo of the best-matching folder, for ambient mode to cycle through. */

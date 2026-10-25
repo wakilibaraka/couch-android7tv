@@ -245,4 +245,21 @@
     <string name="quick_screensaver_sub">Lancer maintenant</string>
     <string name="layout_sky">Ciel</string>
     <string name="wallpaper_sky">Ciel (suit la météo)</string>
+    <string name="sky_inputs">Entrées</string>
+    <string name="sky_refresh">Actualiser</string>
+    <string name="sky_volume">Volume</string>
+    <string name="sky_degrees">%1$d°</string>
+    <string name="sky_range">Max %1$d°  Min %2$d°</string>
+    <string name="sky_theme">Thème photo</string>
+    <string name="sky_theme_weather">Ciel météo</string>
+    <string name="sky_next_photo">Photo suivante</string>
+    <string name="sky_home">Accueil</string>
+    <string name="sky_mute">Muet</string>
+    <string name="sky_rain">%1$d %%</string>
+    <string name="dock_glow">Halo des apps</string>
+    <string name="dock_glow_help">Un halo doux sous les apps du dock</string>
+    <string name="sky_wifi_on">%1$s · Connecté</string>
+    <string name="sky_files">Fichiers</string>
+    <string name="sky_app_settings">Lanceur</string>
+    <string name="sky_android_settings">Android</string>
 </resources>

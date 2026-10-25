@@ -11,6 +11,14 @@ import android.os.Build
 object Fonts {
     private const val PATH = "fonts/hanken_grotesk.ttf"
     private val cache = HashMap<Int, Typeface>()
+    private var clockFace: Typeface? = null
+
+    /** Nunito Black (OFL), the sky layout's clock face; the system font if the asset can't load. */
+    fun clock(context: Context): Typeface = clockFace ?: (try {
+        Typeface.createFromAsset(context.assets, "fonts/nunito_black.ttf")
+    } catch (e: Exception) {
+        Typeface.create("sans-serif-medium", Typeface.NORMAL)
+    }).also { clockFace = it }
 
     /** [weight] is a CSS-style weight: 400 regular, 500 medium, 600 semibold, 700 bold. */
     fun hanken(context: Context, weight: Int): Typeface = cache.getOrPut(weight) {

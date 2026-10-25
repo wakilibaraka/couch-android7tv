@@ -89,7 +89,12 @@ class Hero(context: Context, private val images: Images) : FrameLayout(context) 
 
     /** The sky layout shows the photo almost bare, with no title or description over it. */
     fun setSky(on: Boolean) {
-        sky = on
+        if (on != sky) {
+            sky = on
+            // The other layout decodes at another size.
+            shownUrl = null
+            requestBackdrop(currentTile?.backdropUrl ?: wallpaperUrl)
+        }
         column.visibility = if (on) View.GONE else View.VISIBLE
         setDim(dim)
     }
@@ -105,8 +110,14 @@ class Hero(context: Context, private val images: Images) : FrameLayout(context) 
             crossfade(null)
             return
         }
-        // 720p in RGB_565: the scrim hides the softness, and it moves less than half the bytes of 1080p ARGB.
-        images.load(url, context.dp(640), context.dp(360), 0f, opaque = true, isCurrent = { pendingUrl == url }) {
+        // Rows: 720p in RGB_565, as the scrim hides the softness and it moves less than half the bytes.
+        // Sky: the photo is the screen, so full size in ARGB, which keeps skies free of banding.
+        val (w, h) = if (sky) {
+            resources.displayMetrics.let { (width.takeIf { it > 0 } ?: it.widthPixels) to (height.takeIf { it > 0 } ?: it.heightPixels) }
+        } else {
+            context.dp(640) to context.dp(360)
+        }
+        images.load(url, w, h, 0f, opaque = !sky, isCurrent = { pendingUrl == url }) {
             shownUrl = url
             crossfade(it)
         }

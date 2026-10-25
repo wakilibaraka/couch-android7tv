@@ -29,6 +29,7 @@ class HomeViews(
     images: Images,
     onSettings: () -> Unit,
     onUpdate: () -> Unit,
+    skyActions: SkyOverlay.Actions,
     onAppMenu: (Tile) -> Unit,
     onProgramMenu: (Card) -> Unit,
 ) {
@@ -37,7 +38,7 @@ class HomeViews(
     val topBar = TopBar(activity, onSettings, onUpdate)
     val index = IndexScreen(activity, images, onSettings, onUpdate, onAppMenu, onProgramMenu).apply { visibility = View.GONE }
     val ambient = Ambient(activity, images)
-    val sky = SkyOverlay(activity, onSettings).apply { visibility = View.GONE }
+    val sky = SkyOverlay(activity, skyActions).apply { visibility = View.GONE }
     private val window = activity.window
 
     val root = FrameLayout(activity).apply {
@@ -99,7 +100,6 @@ class HomeViews(
         params.topMargin = top
         params.height = height
         sky.dock.layoutParams = params
-        sky.placeCredit(top)
     }
 
     /** True when the Index layout is the one showing. */

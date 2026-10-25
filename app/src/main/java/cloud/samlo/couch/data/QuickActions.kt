@@ -3,6 +3,7 @@ package cloud.samlo.couch.data
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.media.AudioManager
 import android.net.wifi.WifiManager
 import android.provider.Settings
 import android.widget.Toast
@@ -57,6 +58,49 @@ object QuickActions {
     )
 
     fun settings(context: Context) = open(context, Intent(Settings.ACTION_SETTINGS))
+
+    /** The TV's own file browser, else Android's Files. */
+    fun files(context: Context) = open(
+        context,
+        Intent(Intent.ACTION_MAIN).setClassName("com.cvte.filebrowser.activity", "com.cvte.filebrowser.activity.Guide1Activity"),
+        Intent(Intent.ACTION_MAIN).setClassName("com.android.documentsui", "com.android.documentsui.LauncherActivity"),
+    )
+
+    /** The TV's own settings menu on CVTE boards, else Android's. */
+    fun tvSettings(context: Context) = open(context, CvteTv.settingIntent(), Intent(Settings.ACTION_SETTINGS))
+
+    /** Media volume as a percentage. */
+    fun volume(context: Context): Int {
+        val audio = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager ?: return 0
+        val max = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC).coerceAtLeast(1)
+        return audio.getStreamVolume(AudioManager.STREAM_MUSIC) * 100 / max
+    }
+
+    /** Mutes or unmutes media; returns the level now heard (0 while muted). */
+    fun toggleMute(context: Context): Int {
+        val audio = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager ?: return 0
+        try {
+            audio.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_TOGGLE_MUTE, 0)
+        } catch (e: SecurityException) {
+            return volume(context)
+        }
+        return if (audio.isStreamMute(AudioManager.STREAM_MUSIC)) 0 else volume(context)
+    }
+
+    /** One step up or down, as the remote's volume keys do; returns the new percentage. */
+    fun adjustVolume(context: Context, up: Boolean): Int {
+        val audio = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager ?: return 0
+        try {
+            audio.adjustStreamVolume(
+                AudioManager.STREAM_MUSIC,
+                if (up) AudioManager.ADJUST_RAISE else AudioManager.ADJUST_LOWER,
+                0,
+            )
+        } catch (e: SecurityException) {
+            // Do Not Disturb can refuse changes; the level shown stays truthful.
+        }
+        return volume(context)
+    }
 
     /** The connected network's name, or null when not on Wi-Fi. */
     fun wifiName(context: Context): String? = try {

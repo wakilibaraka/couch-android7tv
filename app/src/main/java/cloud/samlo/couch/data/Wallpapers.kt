@@ -16,7 +16,7 @@ class Wallpapers(private val fetcher: Fetcher, private val prefs: SharedPreferen
 
     fun current(config: Config, userDir: File?, weather: WeatherNow? = null): String? = when (config.wallpaper) {
         "gradient" -> null
-        Config.WALLPAPER_SKY -> SkyPhotos.pick(userDir, weather)?.path ?: daily()
+        Config.WALLPAPER_SKY -> skyList(config, userDir, weather).let { SkyPhotos.ofHour(it) }?.path ?: daily()
         "custom" -> userDir?.let { File(it, "wallpaper.jpg") }?.takeIf { it.isFile }?.path ?: daily()
         "reddit" -> reddit(config) ?: daily()
         else -> daily()
@@ -25,9 +25,14 @@ class Wallpapers(private val fetcher: Fetcher, private val prefs: SharedPreferen
     /** Every candidate for the source, for ambient mode to cycle through. */
     fun all(config: Config, userDir: File?, weather: WeatherNow? = null): List<String> = when (config.wallpaper) {
         "reddit" -> redditList(config.subreddit).ifEmpty { listOfNotNull(daily()) }
-        Config.WALLPAPER_SKY -> SkyPhotos.photos(userDir, weather).map { it.path }.ifEmpty { listOfNotNull(daily()) }
+        Config.WALLPAPER_SKY -> skyList(config, userDir, weather).map { it.path }.ifEmpty { listOfNotNull(daily()) }
         else -> listOfNotNull(current(config, userDir, weather))
     }
+
+    /** The chosen collection: the weather-matched sky, or a theme folder (the sky again when that is empty). */
+    private fun skyList(config: Config, userDir: File?, weather: WeatherNow?): List<File> =
+        if (config.photoTheme == SkyPhotos.WEATHER_THEME) SkyPhotos.photos(userDir, weather)
+        else SkyPhotos.themePhotos(userDir, config.photoTheme).ifEmpty { SkyPhotos.photos(userDir, weather) }
 
     /** Bing's photo of the day, looked up once a day. */
     private fun daily(): String? {

@@ -16,12 +16,14 @@ import cloud.samlo.couch.data.Fetcher
 import cloud.samlo.couch.data.Images
 import cloud.samlo.couch.data.InputSource
 import cloud.samlo.couch.data.Prefs
+import cloud.samlo.couch.data.SkyPhotos
 import cloud.samlo.couch.data.Programs
 import cloud.samlo.couch.data.UserFiles
 import cloud.samlo.couch.data.Wallpapers
 import cloud.samlo.couch.data.Weather
 import cloud.samlo.couch.data.WeatherNow
 import cloud.samlo.couch.settings.SettingsActivity
+import cloud.samlo.couch.ui.SkyOverlay
 import cloud.samlo.couch.ui.Tokens
 import cloud.samlo.couch.update.Installer
 import cloud.samlo.couch.update.Release
@@ -38,6 +40,21 @@ class HomeScreen(private val activity: Activity) {
     private val images = Images(activity, fetcher)
     private val views: HomeViews = HomeViews(
         activity, images, { openSettings() }, { installUpdate() },
+        SkyOverlay.Actions(
+            settings = { openSettings() },
+            reload = { load() },
+            nextPhoto = {
+                SkyPhotos.shift++
+                load()
+            },
+            home = { onHomePressed() },
+            nextTheme = {
+                val themes = SkyPhotos.themes(files.dir)
+                config.photoTheme = themes[(themes.indexOf(config.photoTheme) + 1) % themes.size]
+                config.save(files.dir)
+                load()
+            },
+        ),
         onAppMenu = { menus.show(it) },
         onProgramMenu = { menus.show(it) },
     )
@@ -133,7 +150,19 @@ class HomeScreen(private val activity: Activity) {
 
     /** True when the key was consumed (waking from ambient, or reorder mode). */
     fun consumesKey(event: KeyEvent) = ambientMode.consumesKey(event) || organizer.consumesKey(event) ||
+        (views.skyShown && views.sky.consumesKey(event)) ||
+        (views.skyShown && event.keyCode == KeyEvent.KEYCODE_DPAD_UP && upFromDock(event)) ||
         (views.indexShown && views.index.consumesKey(event))
+
+    /** Up from the dock (the first row) jumps to the sky controls, from any app in it. */
+    private fun upFromDock(event: KeyEvent): Boolean {
+        val focused = activity.currentFocus ?: return false
+        val dock = views.rows.sections().firstOrNull()?.row ?: return false
+        var v: android.view.View? = focused
+        while (v != null && v !== dock) v = v.parent as? android.view.View
+        if (v == null) return false
+        return event.action != KeyEvent.ACTION_DOWN || views.sky.focusFromDock(focused)
+    }
 
     private fun onLoaded(data: HomeData) {
         val lookChanged = config.look != data.config.look
@@ -154,7 +183,6 @@ class HomeScreen(private val activity: Activity) {
         switchLayout(index != null)
         views.showSky(index == null && config.layout == Config.LAYOUT_SKY)
         views.sky.showInputs(data.inputs)
-        views.sky.showCredit(data.credit)
         if (index != null) views.index.bind(index, config) else binder.bind(data.sections, config)
         if (views.skyShown) views.setSectionTitles(false)
         ambientMode.schedule()

@@ -38,6 +38,10 @@ class Config {
     var showDescriptions = true
     var clock24h = true
     var showDate = true
+    /** The sky layout's photo collection: "sky" follows the weather, any other is a folder in `themes/`. */
+    /** A soft glow under the sky dock's app cards. */
+    var dockGlow = true
+    var photoTheme = SkyPhotos.WEATHER_THEME
 
     // Wallpaper: "sky" (photos matched to the weather, from sky/), "daily" (Bing photo of the day),
     // "reddit", "gradient" or "custom" (wallpaper.jpg)
@@ -86,7 +90,22 @@ class Config {
         const val DEFAULT_CITY = "Ogembo, KE"
 
         /** Defaults stay generic: the user pins their own apps. */
-        val DEFAULT_PINNED = emptyList<String>()
+        /**
+         * Most-used first, as the owner asked: YouTube, SmartTube, the browser, the file manager,
+         * then media and sharing. Apps that aren't installed are skipped; the rest follow by name.
+         */
+        val DEFAULT_PINNED = listOf(
+            "com.google.android.youtube.tv",
+            "com.google.android.youtube",
+            "com.teamsmart.videomanager.tv",
+            "com.liskovsoft.smarttubetv.beta",
+            "com.liskovsoft.smarttubetv",
+            "com.phlox.tvwebbrowser",
+            "com.lonelycatgames.Xplore",
+            "org.videolan.vlc",
+            "org.localsend.localsend_app",
+            "com.aurora.store",
+        )
 
         // Vendor extras that are noise on a home screen. Reachable again by un-hiding them.
         val DEFAULT_HIDDEN = setOf(

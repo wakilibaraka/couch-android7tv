@@ -85,6 +85,9 @@ class MainPage(private val ctx: SettingsContext) : SettingsPage {
         if (!rows) return
         o.toggle(ctx.str(R.string.show_labels), ctx.str(R.string.show_labels_help), { config.showLabels }, { config.showLabels = it })
         o.toggle(ctx.str(R.string.show_descriptions), ctx.str(R.string.show_descriptions_help), { config.showDescriptions }, { config.showDescriptions = it })
+        if (config.layout == Config.LAYOUT_SKY) {
+            o.toggle(ctx.str(R.string.dock_glow), ctx.str(R.string.dock_glow_help), { config.dockGlow }, { config.dockGlow = it })
+        }
     }
 
     private fun wallpaper() {
