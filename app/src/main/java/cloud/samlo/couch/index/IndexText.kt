@@ -2,6 +2,7 @@ package cloud.samlo.couch.index
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.os.Build
 import android.util.TypedValue
 import android.view.ViewGroup
 import android.widget.TextView
@@ -26,11 +27,15 @@ class IndexText(context: Context, sizeSp: Float, weight: Int, color: Int, lineHe
         typeface = Fonts.hanken(context, weight)
         setTextColor(color)
         includeFontPadding = false
-        // Fallback fonts' taller metrics would undo the line height.
-        isFallbackLineSpacing = false
         val target = (textSize * lineHeight).roundToInt()
-        setLineHeight(target)
         val metrics = paint.fontMetricsInt
+        if (Build.VERSION.SDK_INT >= 28) {
+            // Fallback fonts' taller metrics would undo the line height.
+            isFallbackLineSpacing = false
+            setLineHeight(target)
+        } else {
+            setLineSpacing((target - (metrics.descent - metrics.ascent)).toFloat(), 1f)
+        }
         inset = ((metrics.descent - metrics.ascent) - target) / 2
     }
 

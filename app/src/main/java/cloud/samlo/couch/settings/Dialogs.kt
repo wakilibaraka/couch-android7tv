@@ -48,7 +48,7 @@ object Dialogs {
             setText(current)
             setSelection(current.length)
             this.hint = hint
-            isSingleLine = true
+            setSingleLine(true)
         }
         val frame = FrameLayout(activity).apply {
             val pad = activity.dp(20)

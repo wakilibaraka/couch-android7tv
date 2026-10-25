@@ -15,6 +15,7 @@ import cloud.samlo.couch.MediaListener
 import cloud.samlo.couch.R
 import cloud.samlo.couch.data.Programs
 import cloud.samlo.couch.data.Usage
+import android.os.Build
 
 /** One access Couch needs for a feature: whether Android has granted it, and where it is granted. */
 class SetupItem(val title: Int, val help: Int, val isOn: (Context) -> Boolean, val open: (Activity) -> Unit)
@@ -46,8 +47,14 @@ object Setup {
     }
 
     private fun notificationAccess(context: Context): Boolean {
+        val me = ComponentName(context, MediaListener::class.java)
+        if (Build.VERSION.SDK_INT < 27) {
+            // Android 7 has no direct question for this: read the list Settings keeps.
+            val enabled = Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners").orEmpty()
+            return enabled.split(':').any { ComponentName.unflattenFromString(it) == me }
+        }
         val manager = context.getSystemService(NotificationManager::class.java) ?: return false
-        return manager.isNotificationListenerAccessGranted(ComponentName(context, MediaListener::class.java))
+        return manager.isNotificationListenerAccessGranted(me)
     }
 
     /** Asked in place; see [onPermissionResult] for a refusal Android won't ask about again. */

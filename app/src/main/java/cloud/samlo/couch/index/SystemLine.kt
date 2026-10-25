@@ -17,6 +17,9 @@ import cloud.samlo.couch.ui.Fonts
 import cloud.samlo.couch.ui.Tokens
 import cloud.samlo.couch.ui.dp
 import java.util.Locale
+import android.graphics.Typeface
+import android.text.style.StyleSpan
+import android.os.Build
 
 /**
  * The TV's own readings along the bottom: address, traffic, memory, storage, uptime, ADB.
@@ -90,7 +93,8 @@ class SystemLine(context: Context) : LinearLayout(context) {
         if (value.isNotEmpty()) {
             text.append(value)
             text.setSpan(ForegroundColorSpan(valueColor), 0, value.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-            text.setSpan(TypefaceSpan(Fonts.hanken(context, 600)), 0, value.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            val weight = if (Build.VERSION.SDK_INT >= 28) TypefaceSpan(Fonts.hanken(context, 600)) else StyleSpan(Typeface.BOLD)
+            text.setSpan(weight, 0, value.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
             if (label.isNotEmpty()) text.append("  ")
         }
         text.append(label)
