@@ -19,7 +19,7 @@ class ConfigTest {
         assertTrue(config.pinnedApps.isEmpty())
         assertTrue("com.sony.dtv.promos" in config.hiddenApps)
         assertEquals("medium", config.cardSize)
-        assertEquals("rows", config.layout)
+        assertEquals("sky", config.layout)
         assertEquals(5, config.ambientMinutes)
         assertEquals(3, config.wallpaperHours)
         assertEquals(Config.DEFAULT_SUBREDDIT, config.subreddit)

@@ -64,6 +64,13 @@ class HomeScreen(private val activity: Activity) {
     )
     private val watchers = SystemWatchers(activity, views.rows, { load() }) { offerInput(it) }
     private val reloadForRecommendations = Runnable { if (resumed) load() }
+    private val periodicReload: Runnable = object : Runnable {
+        override fun run() {
+            if (!resumed) return
+            load()
+            main.postDelayed(this, SKY_REFRESH_MS)
+        }
+    }
 
     fun onCreate() {
         activity.setContentView(views.root)
@@ -84,10 +91,15 @@ class HomeScreen(private val activity: Activity) {
         load()
         startLive()
         ambientMode.schedule(activity = true)
+        views.sky.refresh()
+        // The sky photo follows the hour and the weather: look again while home stays open.
+        main.removeCallbacks(periodicReload)
+        main.postDelayed(periodicReload, SKY_REFRESH_MS)
     }
 
     fun onPause() {
         resumed = false
+        main.removeCallbacks(periodicReload)
         MediaListener.onRecommendationsChanged = null
         main.removeCallbacks(reloadForRecommendations)
         if (organizer.active) organizer.stop()
@@ -140,7 +152,11 @@ class HomeScreen(private val activity: Activity) {
         }
         val index = data.index
         switchLayout(index != null)
+        views.showSky(index == null && config.layout == Config.LAYOUT_SKY)
+        views.sky.showInputs(data.inputs)
+        views.sky.showCredit(data.credit)
         if (index != null) views.index.bind(index, config) else binder.bind(data.sections, config)
+        if (views.skyShown) views.setSectionTitles(false)
         ambientMode.schedule()
     }
 
@@ -162,12 +178,14 @@ class HomeScreen(private val activity: Activity) {
         } else {
             views.topBar.nowPlaying.start()
             views.topBar.animateWeather(true)
+            views.sky.animateWeather(true)
         }
     }
 
     private fun stopLive() {
         views.topBar.nowPlaying.stop()
         views.topBar.animateWeather(false)
+        views.sky.animateWeather(false)
         views.index.topBar.nowPlaying.stop()
         views.index.systemLine.stop()
         views.index.topBar.animateWeather(false)
@@ -179,11 +197,13 @@ class HomeScreen(private val activity: Activity) {
         views.hero.setShowDescription(config.showDescriptions)
         val time = if (config.clock24h) "HH:mm" else "h:mm"
         views.topBar.applyLook(config, time)
+        views.sky.applyLook(config, time)
         views.ambient.setTimeFormat(time)
     }
 
     private fun showWeather(now: WeatherNow?) {
         views.topBar.showWeather(now)
+        views.sky.showWeather(now)
         views.index.topBar.showWeather(now)
         ambientMode.weatherLine = now?.let {
             val label = if (it.condition.label != 0) activity.getString(it.condition.label) else ""
@@ -219,5 +239,6 @@ class HomeScreen(private val activity: Activity) {
     private companion object {
         const val RECOMMENDATIONS_SETTLE_MS = 2_000L
         const val WAKE_SETTLE_MS = 10_000L
+        const val SKY_REFRESH_MS = 15 * 60_000L
     }
 }

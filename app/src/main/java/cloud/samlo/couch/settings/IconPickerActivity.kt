@@ -20,6 +20,7 @@ import cloud.samlo.couch.data.UserFiles
 import cloud.samlo.couch.ui.Card
 import cloud.samlo.couch.ui.Tokens
 import cloud.samlo.couch.ui.dp
+import cloud.samlo.couch.ui.canvasContext
 
 /**
  * Pick an input's icon from real cards, each drawn exactly as it will look on the home screen.
@@ -28,6 +29,8 @@ import cloud.samlo.couch.ui.dp
 class IconPickerActivity : Activity() {
     private val files by lazy { UserFiles(this) }
     private val images by lazy { Images(this, Fetcher(this)) }
+
+    override fun attachBaseContext(newBase: Context) = super.attachBaseContext(canvasContext(newBase))
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

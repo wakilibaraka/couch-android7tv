@@ -52,6 +52,7 @@ class MainPage(private val ctx: SettingsContext) : SettingsPage {
         o.choice(
             ctx.str(R.string.layout), ctx.str(R.string.layout_help),
             listOf(
+                Option(ctx.str(R.string.layout_sky), Config.LAYOUT_SKY),
                 Option(ctx.str(R.string.layout_rows), Config.LAYOUT_ROWS),
                 Option(ctx.str(R.string.layout_index), Config.LAYOUT_INDEX),
             ),
@@ -91,6 +92,7 @@ class MainPage(private val ctx: SettingsContext) : SettingsPage {
         o.choice(
             ctx.str(R.string.wallpaper_source), ctx.str(R.string.wallpaper_source_help),
             listOf(
+                Option(ctx.str(R.string.wallpaper_sky), Config.WALLPAPER_SKY),
                 Option(ctx.str(R.string.wallpaper_daily), "daily"),
                 Option(ctx.str(R.string.wallpaper_reddit), "reddit"),
                 Option(ctx.str(R.string.wallpaper_gradient), "gradient"),

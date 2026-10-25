@@ -4,6 +4,9 @@ import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import cloud.samlo.couch.data.Config
+import cloud.samlo.couch.data.InputSource
+import cloud.samlo.couch.data.SkyPhotos
+import cloud.samlo.couch.data.Tile
 import cloud.samlo.couch.data.UserFiles
 import cloud.samlo.couch.data.Wallpapers
 import cloud.samlo.couch.data.Weather
@@ -12,6 +15,7 @@ import cloud.samlo.couch.index.IndexBuilder
 import cloud.samlo.couch.index.IndexData
 import cloud.samlo.couch.update.Release
 import cloud.samlo.couch.update.UpdateCheck
+import java.io.File
 import java.util.concurrent.Executors
 
 /** Everything one reload produced, ready to apply on the main thread. */
@@ -25,6 +29,10 @@ class HomeData(
     val index: IndexData?,
     /** A newer release, when the daily check found one. */
     val update: Release?,
+    /** The sky layout's input pills. */
+    val inputs: List<Tile> = emptyList(),
+    /** Who took the sky photo showing, when a credit file sits beside it. */
+    val credit: String? = null,
 )
 
 /**
@@ -76,8 +84,13 @@ class HomeLoader(
         // Only the chosen layout's content is built.
         val index = if (config.layout == Config.LAYOUT_INDEX) IndexBuilder.build(context, config, files.icons) else null
         val sections = if (index == null) SectionBuilder.build(context, config, files.icons) else emptyList()
-        val wallpaper = wallpapers.current(config, files.dir)
-        val pictures = if (config.ambientMinutes > 0) wallpapers.all(config, files.dir) else emptyList()
-        return HomeData(config, wallpaper, pictures, weather.now(config), sections, index, updates.pending(config))
+        // Weather first: the sky wallpaper is picked to match it.
+        val now = weather.now(config)
+        val wallpaper = wallpapers.current(config, files.dir, now)
+        val pictures = if (config.ambientMinutes > 0) wallpapers.all(config, files.dir, now) else emptyList()
+        val sky = config.layout == Config.LAYOUT_SKY
+        val inputs = if (sky) InputSource.tiles(context, config, null) else emptyList()
+        val credit = wallpaper?.takeIf { sky && it.startsWith("/") }?.let { SkyPhotos.credit(File(it)) }
+        return HomeData(config, wallpaper, pictures, now, sections, index, updates.pending(config), inputs, credit)
     }
 }

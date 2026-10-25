@@ -5,6 +5,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- The Index layout's footer: the TV's address and connection type. -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- The sky layout's Wi-Fi tile shows the network's name. -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <!-- Granted over ADB or from Android's settings. Screen time in the Index layout. -->
     <uses-permission
         android:name="android.permission.PACKAGE_USAGE_STATS"

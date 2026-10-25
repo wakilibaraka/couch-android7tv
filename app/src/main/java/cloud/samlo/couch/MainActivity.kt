@@ -2,10 +2,12 @@ package cloud.samlo.couch
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.KeyEvent
 import cloud.samlo.couch.home.HomeScreen
+import cloud.samlo.couch.ui.canvasContext
 
 /**
  * The launcher entry point. Named in the TV's settings, so it keeps its name and package; the
@@ -13,6 +15,8 @@ import cloud.samlo.couch.home.HomeScreen
  */
 class MainActivity : Activity() {
     private lateinit var home: HomeScreen
+
+    override fun attachBaseContext(newBase: Context) = super.attachBaseContext(canvasContext(newBase))
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

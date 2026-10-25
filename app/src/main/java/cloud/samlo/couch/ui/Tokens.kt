@@ -55,6 +55,9 @@ object Tokens {
     /** Where the rows start; the hero owns everything above. */
     const val ROWS_TOP = 262
 
+    /** In the sky layout the first row is the dock, near the bottom; the rows under it peek in. */
+    const val SKY_ROWS_TOP = 388
+
     const val HERO_FADE_MS = 320L
     /** The backdrop only changes once focus has rested, so fast scrolling never decodes art. */
     const val HERO_SETTLE_MS = 380L

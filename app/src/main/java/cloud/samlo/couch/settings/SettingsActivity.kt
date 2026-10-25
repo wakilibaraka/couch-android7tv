@@ -8,6 +8,7 @@ import android.view.KeyEvent
 import cloud.samlo.couch.data.Config
 import cloud.samlo.couch.data.UserFiles
 import cloud.samlo.couch.ui.Tokens
+import cloud.samlo.couch.ui.canvasContext
 
 /**
  * Hosts one settings page (main, rows, channels or inputs, chosen by an extra) in the shared
@@ -16,6 +17,8 @@ import cloud.samlo.couch.ui.Tokens
 class SettingsActivity : Activity() {
     private lateinit var page: SettingsPage
     private lateinit var layout: SettingsLayout
+
+    override fun attachBaseContext(newBase: Context) = super.attachBaseContext(canvasContext(newBase))
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
