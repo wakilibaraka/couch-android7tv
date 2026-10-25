@@ -234,4 +234,15 @@
     <string name="update_corrupt">The download didn’t match its checksum, so it wasn’t installed.</string>
     <string name="update_signature">This version is signed with a different key. Uninstall Couch, then install it.</string>
     <string name="icon_auto_guess">Automatic · %1$s</string>
+    <string name="quick_unavailable">Not available on this TV</string>
+    <string name="quick_wifi">Wi-Fi</string>
+    <string name="quick_wifi_off">Not connected</string>
+    <string name="quick_picture">Picture</string>
+    <string name="quick_picture_sub">TV menu</string>
+    <string name="quick_sound">Sound</string>
+    <string name="quick_sound_sub">Volume and output</string>
+    <string name="quick_screensaver">Screensaver</string>
+    <string name="quick_screensaver_sub">Start now</string>
+    <string name="layout_sky">Sky</string>
+    <string name="wallpaper_sky">Sky (matches the weather)</string>
 </resources>

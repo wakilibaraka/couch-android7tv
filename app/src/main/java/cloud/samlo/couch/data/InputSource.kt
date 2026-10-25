@@ -25,6 +25,7 @@ object InputSource {
         w: Int = context.dp(Tokens.INPUT_W),
         h: Int = context.dp(Tokens.INPUT_H),
     ): List<Tile> {
+        if (CvteTv.available(context)) return cvteTiles(context, config, iconsDir, w, h)
         if (!context.packageManager.hasSystemFeature(PackageManager.FEATURE_LIVE_TV)) return emptyList()
         val manager = context.getSystemService(TvInputManager::class.java) ?: return emptyList()
         val all = manager.tvInputList
@@ -41,6 +42,42 @@ object InputSource {
                 tile(context, manager, config, info, systemLabel, key, device, iconsDir, w, h)
             }
     }
+
+    /**
+     * CVTE TVs list the tuner and AV next to HDMI only in their own API (see [CvteTv]), and switch
+     * through it. Keys follow the names ("HDMI 1" is `hdmi1`), like the Android TV inputs.
+     */
+    private fun cvteTiles(context: Context, config: Config, iconsDir: File?, w: Int, h: Int): List<Tile> =
+        CvteTv.sources(context).mapNotNull { source ->
+            if (source.category in PHANTOM_CATEGORIES) return@mapNotNull null
+            val systemLabel = source.name.ifEmpty { source.category }
+            val key = slug(systemLabel).ifEmpty { "source${source.id}" }
+            if (key in config.hiddenInputs) return@mapNotNull null
+            val name = config.names[key] ?: systemLabel
+            val icon = InputIcon.resolve(config.inputIcons[key], name)
+            val hdmi = source.category == "HDMI"
+            Tile(
+                key = key,
+                kind = Tile.Kind.INPUT,
+                label = name,
+                meta = systemLabel.takeIf { it != name },
+                subtitle = systemLabel.takeIf { it != name },
+                banner = Banners.memoized("input|$key|$w|${Banners.mtime(iconsDir, key)}") { Banners.custom(iconsDir, key, w, h, context) },
+                iconRes = when {
+                    config.inputIcons[key] != null || hdmi -> icon.res
+                    source.category in TUNERS -> R.drawable.ic_tv
+                    else -> R.drawable.ic_input
+                },
+                cardColor = icon.color?.let { Color.parseColor(it) },
+                iconWide = icon.wide,
+                inputId = "cvte:${source.id}",
+                intent = CvteTv.playerIntent(),
+                action = { CvteTv.show(it, source.id) },
+            )
+        }
+
+    private val PHANTOM_CATEGORIES = setOf("SCART", "YPBPR", "PC", "VGA", "SVIDEO")
+    private val TUNERS = setOf("ATV", "TV", "DTMB", "DVBC", "DVBS", "DVBT", "ATSC", "ISDB")
 
     /** Every input, hidden ones too and without decoding custom images, for settings lists. */
     fun all(context: Context, config: Config): List<Tile> {

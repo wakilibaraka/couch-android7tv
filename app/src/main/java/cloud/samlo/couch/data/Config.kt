@@ -25,25 +25,29 @@ class Config {
     var channels: Map<String, Boolean> = emptyMap()
 
     // Look
-    /** "rows" (cards in rows) or "index" (a list of apps beside what the focused one offers). */
-    var layout: String = LAYOUT_ROWS
+    /**
+     * "sky" (Apple TV style: big clock, inputs on top, a glass dock over a weather photo), "rows"
+     * (cards in rows) or "index" (a list of apps beside what the focused one offers).
+     */
+    var layout: String = LAYOUT_SKY
     var cardSize: String = "medium"
     var accent: String = Accents.default
-    var wallpaper: String = "daily"
+    var wallpaper: String = WALLPAPER_SKY
     var dim: String = "medium"
     var showLabels = false
     var showDescriptions = true
     var clock24h = true
     var showDate = true
 
-    // Wallpaper: "daily" (Bing photo of the day), "reddit", "gradient" or "custom" (wallpaper.jpg)
+    // Wallpaper: "sky" (photos matched to the weather, from sky/), "daily" (Bing photo of the day),
+    // "reddit", "gradient" or "custom" (wallpaper.jpg)
     var subreddit = DEFAULT_SUBREDDIT
     var wallpaperHours = 3
 
     // Weather
     var weather = true
-    /** Empty means locate by IP address. */
-    var weatherCity = ""
+    /** Empty means locate by IP address. This fork's TV lives in Ogembo, Kenya. */
+    var weatherCity = DEFAULT_CITY
     var fahrenheit = false
 
     /** Minutes idle on the home screen before ambient mode; 0 turns it off. */
@@ -77,6 +81,9 @@ class Config {
         const val DEFAULT_SUBREDDIT = "WidescreenWallpaper"
         const val LAYOUT_ROWS = "rows"
         const val LAYOUT_INDEX = "index"
+        const val LAYOUT_SKY = "sky"
+        const val WALLPAPER_SKY = "sky"
+        const val DEFAULT_CITY = "Ogembo, KE"
 
         /** Defaults stay generic: the user pins their own apps. */
         val DEFAULT_PINNED = emptyList<String>()

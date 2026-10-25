@@ -32,6 +32,9 @@ class Hero(context: Context, private val images: Images) : FrameLayout(context) 
         setLineSpacing(0f, 1.15f)
     }
     private val scrim = FlatView(context).apply { background = scrimDrawable("medium") }
+    private val column = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
+    private var sky = false
+    private var dim = "medium"
 
     /** Shown behind apps, inputs, and anything without art of its own. */
     var wallpaperUrl: String? = null
@@ -51,7 +54,6 @@ class Hero(context: Context, private val images: Images) : FrameLayout(context) 
         addView(above, fill())
         addView(scrim, fill())
 
-        val column = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
         column.addView(title, LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, context.dp(46)))
         column.addView(meta, LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, context.dp(24)))
         column.addView(description, LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, context.dp(70)).apply {
@@ -81,7 +83,15 @@ class Hero(context: Context, private val images: Images) : FrameLayout(context) 
 
     /** How much the art is darkened behind the text: "light", "medium" or "strong". */
     fun setDim(level: String) {
-        scrim.background = scrimDrawable(level)
+        dim = level
+        scrim.background = if (sky) skyScrimDrawable(level) else scrimDrawable(level)
+    }
+
+    /** The sky layout shows the photo almost bare, with no title or description over it. */
+    fun setSky(on: Boolean) {
+        sky = on
+        column.visibility = if (on) View.GONE else View.VISIBLE
+        setDim(dim)
     }
 
     fun setShowDescription(show: Boolean) {

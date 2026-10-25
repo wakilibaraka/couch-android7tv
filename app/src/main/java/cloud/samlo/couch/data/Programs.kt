@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import android.database.Cursor
 import android.media.tv.TvContract
 import android.net.Uri
+import android.os.Build
 import cloud.samlo.couch.R
 
 /**
@@ -24,7 +25,8 @@ object Programs {
         fun shown(config: Config) = config.channels[id.toString()] ?: browsable
     }
 
-    fun canRead(context: Context) =
+    /** Preview channels arrived in Android 8; older TVs have none to read. */
+    fun canRead(context: Context) = Build.VERSION.SDK_INT >= 26 &&
         context.checkSelfPermission(READ_TV_LISTINGS) == PackageManager.PERMISSION_GRANTED
 
     /**
@@ -70,7 +72,7 @@ object Programs {
     }
 
     private fun previewPrograms(context: Context, info: ChannelInfo): List<Tile> =
-        query(context, TvContract.buildPreviewProgramsUriForChannel(info.id)) { c ->
+        if (Build.VERSION.SDK_INT < 26) emptyList() else query(context, TvContract.buildPreviewProgramsUriForChannel(info.id)) { c ->
             if (c.int("browsable", 1) == 0) return@query null
             c.int("weight", 0) to ProgramTile.from(context, c, info.packageName)
         }.filterNotNull().sortedByDescending { it.first }.mapNotNull { it.second }.take(MAX_ROW)

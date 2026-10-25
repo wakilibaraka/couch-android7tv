@@ -29,3 +29,29 @@ fun scrimDrawable(level: String): LayerDrawable {
     )
     return LayerDrawable(arrayOf(left, bottom, top))
 }
+
+/**
+ * The sky layout's lighter scrim: the photo stays the subject, darkened only behind the clock
+ * (top left) and under the dock, by [level].
+ */
+fun skyScrimDrawable(level: String): LayerDrawable {
+    val strength = when (level) {
+        "light" -> 0.6f
+        "strong" -> 1.5f
+        else -> 1f
+    }
+    fun black(alpha: Int) = ((alpha * strength).toInt().coerceIn(0, 255) shl 24)
+    val top = GradientDrawable(
+        GradientDrawable.Orientation.TOP_BOTTOM,
+        intArrayOf(black(0x80), black(0x26), 0, 0, 0),
+    )
+    val corner = GradientDrawable(
+        GradientDrawable.Orientation.TL_BR,
+        intArrayOf(black(0x4D), 0, 0),
+    )
+    val bottom = GradientDrawable(
+        GradientDrawable.Orientation.TOP_BOTTOM,
+        intArrayOf(0, 0, 0, black(0x40), black(0x9E)),
+    )
+    return LayerDrawable(arrayOf(top, corner, bottom))
+}

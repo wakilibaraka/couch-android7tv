@@ -234,4 +234,15 @@
     <string name="update_corrupt">Le téléchargement ne correspond pas à sa somme de contrôle : il n’a pas été installé.</string>
     <string name="update_signature">Cette version est signée avec une autre clé. Désinstalle Couch, puis installe-la.</string>
     <string name="icon_auto_guess">Automatique · %1$s</string>
+    <string name="quick_unavailable">Pas disponible sur cette télé</string>
+    <string name="quick_wifi">Wi-Fi</string>
+    <string name="quick_wifi_off">Non connecté</string>
+    <string name="quick_picture">Image</string>
+    <string name="quick_picture_sub">Menu de la télé</string>
+    <string name="quick_sound">Son</string>
+    <string name="quick_sound_sub">Volume et sortie</string>
+    <string name="quick_screensaver">Économiseur</string>
+    <string name="quick_screensaver_sub">Lancer maintenant</string>
+    <string name="layout_sky">Ciel</string>
+    <string name="wallpaper_sky">Ciel (suit la météo)</string>
 </resources>

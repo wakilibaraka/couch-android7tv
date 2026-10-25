@@ -14,17 +14,19 @@ import java.util.Locale
  */
 class Wallpapers(private val fetcher: Fetcher, private val prefs: SharedPreferences) {
 
-    fun current(config: Config, userDir: File?): String? = when (config.wallpaper) {
+    fun current(config: Config, userDir: File?, weather: WeatherNow? = null): String? = when (config.wallpaper) {
         "gradient" -> null
+        Config.WALLPAPER_SKY -> SkyPhotos.pick(userDir, weather)?.path ?: daily()
         "custom" -> userDir?.let { File(it, "wallpaper.jpg") }?.takeIf { it.isFile }?.path ?: daily()
         "reddit" -> reddit(config) ?: daily()
         else -> daily()
     }
 
     /** Every candidate for the source, for ambient mode to cycle through. */
-    fun all(config: Config, userDir: File?): List<String> = when (config.wallpaper) {
+    fun all(config: Config, userDir: File?, weather: WeatherNow? = null): List<String> = when (config.wallpaper) {
         "reddit" -> redditList(config.subreddit).ifEmpty { listOfNotNull(daily()) }
-        else -> listOfNotNull(current(config, userDir))
+        Config.WALLPAPER_SKY -> SkyPhotos.photos(userDir, weather).map { it.path }.ifEmpty { listOfNotNull(daily()) }
+        else -> listOfNotNull(current(config, userDir, weather))
     }
 
     /** Bing's photo of the day, looked up once a day. */

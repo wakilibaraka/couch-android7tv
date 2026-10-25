@@ -37,8 +37,10 @@ object SectionBuilder {
             byId[Sections.RECENT] = SectionData(Sections.RECENT, context.getString(R.string.section_recent), recent, appW, appH, config.look)
         }
 
+        // The sky layout shows inputs as pills in its top bar instead of as a row.
         val (inputW, inputH) = size(Tokens.INPUT_W, Tokens.INPUT_H)
-        val inputs = InputSource.tiles(context, config, iconsDir, context.dp(inputW), context.dp(inputH))
+        val inputs = if (config.layout == Config.LAYOUT_SKY) emptyList()
+        else InputSource.tiles(context, config, iconsDir, context.dp(inputW), context.dp(inputH))
         if (inputs.isNotEmpty()) {
             byId[Sections.INPUTS] = SectionData(Sections.INPUTS, context.getString(R.string.section_inputs), inputs, inputW, inputH, config.look)
         }

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android 8 added a default focus highlight; Couch draws its own rings. -->
+    <style name="Theme.Couch" parent="Theme.Couch.Base">
+        <item name="android:defaultFocusHighlightEnabled">false</item>
+    </style>
+</resources>

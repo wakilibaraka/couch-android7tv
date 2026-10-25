@@ -34,9 +34,13 @@ class WeatherPlaces(private val fetcher: Fetcher, private val prefs: SharedPrefe
         return Place(o.getString("city"), o.getDouble("latitude"), o.getDouble("longitude"))
     }
 
+    /** "Ogembo, KE" narrows the search to a country (ISO code), for names that exist in several. */
     private fun byName(city: String): Place? {
-        val q = URLEncoder.encode(city.trim(), "UTF-8")
-        val o = JSONObject(fetcher.text("https://geocoding-api.open-meteo.com/v1/search?name=$q&count=1&language=${Locale.getDefault().language}") ?: return null)
+        val country = city.substringAfterLast(',', "").trim().takeIf { it.length == 2 && it.all(Char::isLetter) }
+        val name = if (country != null) city.substringBeforeLast(',') else city
+        val q = URLEncoder.encode(name.trim(), "UTF-8")
+        val filter = country?.let { "&countryCode=${it.uppercase(Locale.ROOT)}" }.orEmpty()
+        val o = JSONObject(fetcher.text("https://geocoding-api.open-meteo.com/v1/search?name=$q&count=1$filter&language=${Locale.getDefault().language}") ?: return null)
         val r = o.optJSONArray("results")?.optJSONObject(0) ?: return null
         return Place(r.getString("name"), r.getDouble("latitude"), r.getDouble("longitude"))
     }

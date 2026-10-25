@@ -34,6 +34,8 @@ class Tile(
     val iconWide: Boolean = false,
     /** Launches instead of [intent] when set (Fire TV recommendations); [intent] stays the fallback. */
     private val pendingIntent: PendingIntent? = null,
+    /** Runs instead of [intent] when set (CVTE inputs, which switch through the TV's API). */
+    private val action: ((Context) -> Unit)? = null,
 ) {
     enum class Kind { APP, INPUT, PROGRAM }
 
@@ -41,6 +43,10 @@ class Tile(
     val signature: String get() = "$key|$label|$subtitle|$imageUrl|$dimmed|$iconRes|$cardColor|${(progress * 100).toInt()}|${banner?.generationId}"
 
     fun launch(context: Context) {
+        if (action != null) {
+            action.invoke(context)
+            return
+        }
         if (pendingIntent != null) {
             try {
                 pendingIntent.send()
