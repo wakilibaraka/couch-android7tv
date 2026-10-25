@@ -49,6 +49,7 @@ object InputSource {
      */
     private fun cvteTiles(context: Context, config: Config, iconsDir: File?, w: Int, h: Int): List<Tile> =
         CvteTv.sources(context).mapNotNull { source ->
+            if (source.category in PHANTOM_CATEGORIES) return@mapNotNull null
             val systemLabel = source.name.ifEmpty { source.category }
             val key = slug(systemLabel).ifEmpty { "source${source.id}" }
             if (key in config.hiddenInputs) return@mapNotNull null
@@ -75,6 +76,7 @@ object InputSource {
             )
         }
 
+    private val PHANTOM_CATEGORIES = setOf("SCART", "YPBPR", "PC", "VGA", "SVIDEO")
     private val TUNERS = setOf("ATV", "TV", "DTMB", "DVBC", "DVBS", "DVBT", "ATSC", "ISDB")
 
     /** Every input, hidden ones too and without decoding custom images, for settings lists. */

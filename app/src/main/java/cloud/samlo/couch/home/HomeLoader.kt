@@ -90,7 +90,7 @@ class HomeLoader(
         val pictures = if (config.ambientMinutes > 0) wallpapers.all(config, files.dir, now) else emptyList()
         val sky = config.layout == Config.LAYOUT_SKY
         val inputs = if (sky) InputSource.tiles(context, config, null) else emptyList()
-        val credit = wallpaper?.takeIf { sky && it.startsWith("/") }?.let { SkyPhotos.credit(File(it)) }
+        val credit: String? = null
         return HomeData(config, wallpaper, pictures, now, sections, index, updates.pending(config), inputs, credit)
     }
 }

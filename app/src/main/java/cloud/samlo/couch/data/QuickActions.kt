@@ -17,14 +17,37 @@ object QuickActions {
 
     fun wifi(context: Context) = open(context, Intent(Settings.ACTION_WIFI_SETTINGS))
 
-    /** The TV's picture and sound menu, the one its remote's menu key shows. */
-    fun picture(context: Context) = open(
-        context,
-        Intent("com.cvte.intent.action.TV_MENU").setPackage(CVTE_SETTINGS),
-        Intent(Settings.ACTION_DISPLAY_SETTINGS),
-    )
+    /** Picture mode: cycles TV modes on CVTE boards (P.MODE), or opens safe TV settings. */
+    fun picture(context: Context, onModeChanged: ((String) -> Unit)? = null) {
+        if (CvteTv.available(context)) {
+            CvteTv.cyclePicture(context) { mode ->
+                if (mode != null) {
+                    onModeChanged?.invoke(mode)
+                    Toast.makeText(context, mode, Toast.LENGTH_SHORT).show()
+                } else {
+                    open(context, CvteTv.settingIntent(), Intent(Settings.ACTION_DISPLAY_SETTINGS))
+                }
+            }
+            return
+        }
+        open(context, CvteTv.settingIntent(), Intent(Settings.ACTION_DISPLAY_SETTINGS))
+    }
 
-    fun sound(context: Context) = open(context, Intent(Settings.ACTION_SOUND_SETTINGS))
+    /** Sound mode: cycles TV modes on CVTE boards (S.MODE), or opens safe TV settings. */
+    fun sound(context: Context, onModeChanged: ((String) -> Unit)? = null) {
+        if (CvteTv.available(context)) {
+            CvteTv.cycleSound(context) { mode ->
+                if (mode != null) {
+                    onModeChanged?.invoke(mode)
+                    Toast.makeText(context, mode, Toast.LENGTH_SHORT).show()
+                } else {
+                    open(context, CvteTv.settingIntent(), Intent(Settings.ACTION_SOUND_SETTINGS))
+                }
+            }
+            return
+        }
+        open(context, CvteTv.settingIntent(), Intent(Settings.ACTION_SOUND_SETTINGS))
+    }
 
     /** Starts the screensaver now (Android's own "start now" activity), or opens its settings. */
     fun screensaver(context: Context) = open(

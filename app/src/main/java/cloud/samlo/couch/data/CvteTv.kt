@@ -4,6 +4,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import java.util.concurrent.CountDownLatch
@@ -94,6 +95,77 @@ object CvteTv {
         .addCategory("android.intent.category.TV_HOME")
         .putExtra("isLauncherGoToTv", true)
         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+    /** Safe TV settings activity on CVTE boards (avoids crashing TvExtraActivity). */
+    fun settingIntent(): Intent = Intent(Intent.ACTION_MAIN)
+        .setClassName("com.cvte.tv.androidsetting", "com.cvte.tv.androidsetting.TvSettingActivity")
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+    /**
+     * Cycles through the TV's hardware picture modes (Standard -> Dynamic -> Mild -> Movie...),
+     * matching the remote's P.MODE key. Delivers the new mode name on the main thread.
+     */
+    fun cyclePicture(context: Context, onResult: (String?) -> Unit) {
+        val app = context.applicationContext
+        Thread {
+            val name = try {
+                val tv = connect(app) ?: return@Thread
+                val pic = tv.javaClass.getMethod("getTVApiPictureControl").invoke(tv) ?: return@Thread
+                val current = pic.javaClass.getMethod("eventGetCurrentPictureMode").invoke(pic) ?: return@Thread
+                val options = pic.javaClass.getMethod("eventGetPictureModeOptions").invoke(pic) as? List<*> ?: return@Thread
+                if (options.isEmpty()) return@Thread
+                val currentIndex = options.indexOf(current)
+                val nextIndex = if (currentIndex >= 0) (currentIndex + 1) % options.size else 0
+                val next = options[nextIndex] ?: return@Thread
+                pic.javaClass.getMethod("eventSetCurrentPictureMode", next.javaClass).invoke(pic, next)
+                try {
+                    pic.javaClass.getMethod("eventCommitCurrentPictureModeDataAsDefault").invoke(pic)
+                } catch (ignored: Throwable) {}
+                cleanModeName(next.toString(), "PICTURE")
+            } catch (e: Throwable) {
+                null
+            }
+            Handler(Looper.getMainLooper()).post { onResult(name) }
+        }.start()
+    }
+
+    /**
+     * Cycles through the TV's hardware sound modes (Standard -> Music -> Movie -> Sports...),
+     * matching the remote's S.MODE key. Delivers the new mode name on the main thread.
+     */
+    fun cycleSound(context: Context, onResult: (String?) -> Unit) {
+        val app = context.applicationContext
+        Thread {
+            val name = try {
+                val tv = connect(app) ?: return@Thread
+                val sound = tv.javaClass.getMethod("getTVApiSoundEq").invoke(tv) ?: return@Thread
+                val current = sound.javaClass.getMethod("eventGetCurrentSoundMode").invoke(sound) ?: return@Thread
+                val options = sound.javaClass.getMethod("eventGetSoundModeOptions").invoke(sound) as? List<*> ?: return@Thread
+                if (options.isEmpty()) return@Thread
+                val currentIndex = options.indexOf(current)
+                val nextIndex = if (currentIndex >= 0) (currentIndex + 1) % options.size else 0
+                val next = options[nextIndex] ?: return@Thread
+                sound.javaClass.getMethod("eventSetCurrentSoundMode", next.javaClass).invoke(sound, next)
+                try {
+                    sound.javaClass.getMethod("eventCommitCurrentSoundModeDataAsDefault").invoke(sound)
+                } catch (ignored: Throwable) {}
+                cleanModeName(next.toString(), "SOUND")
+            } catch (e: Throwable) {
+                null
+            }
+            Handler(Looper.getMainLooper()).post { onResult(name) }
+        }.start()
+    }
+
+    private fun cleanModeName(raw: String, prefix: String): String {
+        val cleaned = raw.substringAfter("OPTION_${prefix}_MODE_").substringAfter("OPTION_MODE_")
+            .replace('_', ' ')
+            .lowercase()
+            .split(' ')
+            .filter { it.isNotEmpty() }
+            .joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } }
+        return cleaned.ifEmpty { raw }
+    }
 
     private fun inputApi(context: Context): Any? {
         val tv = connect(context) ?: return null

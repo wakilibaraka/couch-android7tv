@@ -10,6 +10,7 @@ import android.view.View
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.FrameLayout
 import android.widget.GridLayout
+import android.widget.HorizontalScrollView
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextClock
@@ -66,16 +67,18 @@ class SkyOverlay(context: Context, onSettings: () -> Unit) : FrameLayout(context
         gravity = Gravity.CENTER_VERTICAL or Gravity.END
     }
     private val inputPills = LinearLayout(context).apply { orientation = LinearLayout.HORIZONTAL }
+    private val inputScroll = HorizontalScrollView(context).apply {
+        isHorizontalScrollBarEnabled = false
+        overScrollMode = View.OVER_SCROLL_NEVER
+        addView(inputPills)
+    }
     private var inputSignature = ""
 
     private val wifiTile: QuickTile
+    private val pictureTile: QuickTile
+    private val soundTile: QuickTile
     private val credit = TextView(context).apply {
-        textSize = 12f
-        setTextColor(0xD9EDEDEF.toInt())
-        gravity = Gravity.END
-        maxLines = 2
-        ellipsize = TextUtils.TruncateAt.END
-        setShadowLayer(context.dpf(6f), 0f, context.dpf(1f), 0x80000000.toInt())
+        visibility = View.GONE
     }
 
     /** The dock's glass, behind the rows; the home screen sizes and places it around the first row. */
@@ -95,7 +98,7 @@ class SkyOverlay(context: Context, onSettings: () -> Unit) : FrameLayout(context
             topMargin = context.dp(Tokens.OVERSCAN_V)
         })
 
-        pills.addView(inputPills)
+        pills.addView(inputScroll, LinearLayout.LayoutParams(WRAP_CONTENT, context.dp(40)))
         pills.addView(
             Glass.pill(context, R.drawable.ic_settings, null) { onSettings() }.apply {
                 contentDescription = context.getString(R.string.settings)
@@ -104,11 +107,17 @@ class SkyOverlay(context: Context, onSettings: () -> Unit) : FrameLayout(context
         )
 
         wifiTile = QuickTile(context, R.drawable.ic_wifi, context.getString(R.string.quick_wifi)) { QuickActions.wifi(context) }
+        pictureTile = QuickTile(context, R.drawable.ic_picture, context.getString(R.string.quick_picture), context.getString(R.string.quick_picture_sub)) {
+            QuickActions.picture(context) { mode -> pictureTile.subtitle.text = mode }
+        }
+        soundTile = QuickTile(context, R.drawable.ic_volume, context.getString(R.string.quick_sound), context.getString(R.string.quick_sound_sub)) {
+            QuickActions.sound(context) { mode -> soundTile.subtitle.text = mode }
+        }
         val grid = GridLayout(context).apply {
             columnCount = 2
             addView(wifiTile, tileParams())
-            addView(QuickTile(context, R.drawable.ic_picture, context.getString(R.string.quick_picture), context.getString(R.string.quick_picture_sub)) { QuickActions.picture(context) }, tileParams())
-            addView(QuickTile(context, R.drawable.ic_volume, context.getString(R.string.quick_sound), context.getString(R.string.quick_sound_sub)) { QuickActions.sound(context) }, tileParams())
+            addView(pictureTile, tileParams())
+            addView(soundTile, tileParams())
             addView(QuickTile(context, R.drawable.ic_moon, context.getString(R.string.quick_screensaver), context.getString(R.string.quick_screensaver_sub)) { QuickActions.screensaver(context) }, tileParams())
         }
 
@@ -120,21 +129,13 @@ class SkyOverlay(context: Context, onSettings: () -> Unit) : FrameLayout(context
         }, LayoutParams(WRAP_CONTENT, WRAP_CONTENT, Gravity.TOP or Gravity.END).apply {
             rightMargin = context.dp(Tokens.OVERSCAN_H)
             topMargin = context.dp(Tokens.OVERSCAN_V + 4)
-        })
-
-        addView(credit, LayoutParams(context.dp(360), WRAP_CONTENT, Gravity.TOP or Gravity.END).apply {
-            rightMargin = context.dp(Tokens.OVERSCAN_H)
+            leftMargin = context.dp(340)
         })
     }
 
     /** Puts the credit just above the dock's glass. */
     fun placeCredit(dockTop: Int) {
-        val params = credit.layoutParams as LayoutParams
-        val top = dockTop - context.dp(10) - credit.height.coerceAtLeast(context.dp(16))
-        if (params.topMargin != top) {
-            params.topMargin = top
-            credit.layoutParams = params
-        }
+        // Disabled: photo descriptions are hidden
     }
 
     /** The TV's inputs, left of the gear. Rebuilt only when they change, so focus stays put. */
@@ -178,8 +179,7 @@ class SkyOverlay(context: Context, onSettings: () -> Unit) : FrameLayout(context
     }
 
     fun showCredit(text: String?) {
-        credit.text = text.orEmpty()
-        credit.visibility = if (text.isNullOrEmpty()) View.GONE else View.VISIBLE
+        credit.visibility = View.GONE
     }
 
     /** Called on every return home: the network may have changed while away. */
