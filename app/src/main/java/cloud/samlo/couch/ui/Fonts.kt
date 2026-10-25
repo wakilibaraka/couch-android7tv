@@ -2,6 +2,7 @@ package cloud.samlo.couch.ui
 
 import android.content.Context
 import android.graphics.Typeface
+import android.os.Build
 
 /**
  * Hanken Grotesk, the Index layout's typeface: one variable font (Latin subset, OFL) in
@@ -13,10 +14,20 @@ object Fonts {
 
     /** [weight] is a CSS-style weight: 400 regular, 500 medium, 600 semibold, 700 bold. */
     fun hanken(context: Context, weight: Int): Typeface = cache.getOrPut(weight) {
-        try {
-            Typeface.Builder(context.assets, PATH).setFontVariationSettings("'wght' $weight").setWeight(weight).build()
-        } catch (e: Exception) {
-            null
-        } ?: Typeface.create(Typeface.SANS_SERIF, weight, false)
+        if (Build.VERSION.SDK_INT >= 28) {
+            try {
+                Typeface.Builder(context.assets, PATH).setFontVariationSettings("'wght' $weight").setWeight(weight).build()
+            } catch (e: Exception) {
+                null
+            } ?: Typeface.create(Typeface.SANS_SERIF, weight, false)
+        } else {
+            // Android 7 can't pick a variable font's instance: the default one, made bold from 600 up.
+            val style = if (weight >= 600) Typeface.BOLD else Typeface.NORMAL
+            try {
+                Typeface.create(Typeface.createFromAsset(context.assets, PATH), style)
+            } catch (e: Exception) {
+                Typeface.create(Typeface.SANS_SERIF, style)
+            }
+        }
     }
 }

@@ -37,7 +37,7 @@ class UpdateCheck(context: Context, private val fetcher: Fetcher) {
     }
 
     private companion object {
-        const val LATEST = "https://api.github.com/repos/samuelloranger/couch/releases/latest"
+        const val LATEST = "https://api.github.com/repos/wakilibaraka/couch-android7tv/releases/latest"
         const val CHECKED_AT = "update:checkedAt"
         const val LATEST_RELEASE = "update:latest"
         const val DAY_MS = 24 * 60 * 60_000L

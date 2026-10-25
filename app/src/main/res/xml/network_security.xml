@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 7.0 predates several roots today's sites chain to (Let's Encrypt's ISRG roots among
+     them), so weather, wallpapers and updates would fail there. These public roots are trusted
+     alongside the system's own. -->
+<network-security-config>
+    <base-config>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="@raw/ca_isrg_root_x1" />
+            <certificates src="@raw/ca_isrg_root_x2" />
+            <certificates src="@raw/ca_digicert_global_root_g2" />
+            <certificates src="@raw/ca_gts_root_r1" />
+            <certificates src="@raw/ca_gts_root_r4" />
+            <certificates src="@raw/ca_usertrust_rsa_certification_authority" />
+            <certificates src="@raw/ca_usertrust_ecc_certification_authority" />
+            <certificates src="@raw/ca_amazon_root_ca_1" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

@@ -2,6 +2,7 @@ package cloud.samlo.couch.home
 
 import android.app.Activity
 import android.content.Intent
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
@@ -67,7 +68,7 @@ class HomeScreen(private val activity: Activity) {
     fun onCreate() {
         activity.setContentView(views.root)
         watchers.register()
-        if (!Programs.canRead(activity)) activity.requestPermissions(arrayOf(Programs.READ_TV_LISTINGS), 1)
+        if (Build.VERSION.SDK_INT >= 26 && !Programs.canRead(activity)) activity.requestPermissions(arrayOf(Programs.READ_TV_LISTINGS), 1)
     }
 
     fun onResume() {

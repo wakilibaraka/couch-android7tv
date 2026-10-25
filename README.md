@@ -12,6 +12,11 @@
   <a href="https://buymeacoffee.com/samlo122"><img src="https://img.shields.io/badge/Buy%20me%20a%20coffee-FFDD00?logo=buymeacoffee&logoColor=black" alt="Buy me a coffee" /></a>
 </p>
 
+> **This fork** runs Couch on Android 7.0 TVs (built for a Vision TV with a CVTE MT5863 board) and adds an
+> Apple TV-style home with a sky that follows the local weather. Couch is by
+> [Samuel Loranger](https://github.com/samuelloranger/couch); this fork is personal and non-commercial,
+> used with the author's permission. Its app id is `io.github.wakilibaraka.couch`, so it installs beside Couch.
+
 A light, fast home screen for Android TV, built for TVs whose chips struggle with the stock
 launcher. Plain Android Views, no AndroidX, no Compose, no tracking: the APK is a few hundred KB.
 

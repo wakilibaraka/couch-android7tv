@@ -53,9 +53,10 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "cloud.samlo.couch"
-        // Fire OS 7 (Android 9) is the oldest target.
-        minSdk = 28
+        // Its own id, so this Android 7 build installs beside upstream Couch instead of over it.
+        applicationId = "io.github.wakilibaraka.couch"
+        // Android 7.0: the Vision (CVTE MT5863) TV this fork exists for.
+        minSdk = 24
         targetSdk = 36
         versionCode = (semver[0] * 10_000 + semver[1] * 100 + semver[2]).coerceAtLeast(1)
         versionName = semver.joinToString(".")
@@ -86,6 +87,8 @@ android {
     }
 
     compileOptions {
+        // java.time (screen time) arrived in Android 8; desugaring brings it to Android 7.
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -103,6 +106,7 @@ android {
 }
 
 dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
     testImplementation("junit:junit:4.13.2")
     // The android.jar used by JVM tests only has stubs for org.json.
     testImplementation("org.json:json:20240303")
