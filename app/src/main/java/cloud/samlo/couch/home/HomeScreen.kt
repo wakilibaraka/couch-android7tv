@@ -151,7 +151,18 @@ class HomeScreen(private val activity: Activity) {
     /** True when the key was consumed (waking from ambient, or reorder mode). */
     fun consumesKey(event: KeyEvent) = ambientMode.consumesKey(event) || organizer.consumesKey(event) ||
         (views.skyShown && views.sky.consumesKey(event)) ||
+        (views.skyShown && event.keyCode == KeyEvent.KEYCODE_DPAD_UP && upFromDock(event)) ||
         (views.indexShown && views.index.consumesKey(event))
+
+    /** Up from the dock (the first row) jumps to the sky controls, from any app in it. */
+    private fun upFromDock(event: KeyEvent): Boolean {
+        val focused = activity.currentFocus ?: return false
+        val dock = views.rows.sections().firstOrNull()?.row ?: return false
+        var v: android.view.View? = focused
+        while (v != null && v !== dock) v = v.parent as? android.view.View
+        if (v == null) return false
+        return event.action != KeyEvent.ACTION_DOWN || views.sky.focusFromDock(focused)
+    }
 
     private fun onLoaded(data: HomeData) {
         val lookChanged = config.look != data.config.look

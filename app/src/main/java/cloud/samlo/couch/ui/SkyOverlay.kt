@@ -124,9 +124,8 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
         addView(Glass.icon(context, R.drawable.ic_expand, 16), LinearLayout.LayoutParams(context.dp(16), context.dp(16)).apply { marginStart = context.dp(4) })
     }
     private val wifiPill: LinearLayout = Glass.pill(context, R.drawable.ic_wifi, context.getString(R.string.quick_wifi)) { QuickActions.wifi(context) }
-    private val gear = Glass.pill(context, R.drawable.ic_settings, null) { actions.settings() }.apply {
-        contentDescription = context.getString(R.string.settings)
-    }
+    private val gear = Glass.pill(context, R.drawable.ic_settings, context.getString(R.string.sky_app_settings)) { actions.settings() }
+    private val androidSettings = Glass.pill(context, R.drawable.ic_tv, context.getString(R.string.sky_android_settings)) { QuickActions.settings(context) }
     private val inputMenu = LinearLayout(context).apply {
         orientation = LinearLayout.VERTICAL
         background = Glass.panel(context, 22f, 0xB3202428.toInt())
@@ -210,7 +209,8 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
                 gravity = Gravity.CENTER_VERTICAL
                 addView(wifiPill, LinearLayout.LayoutParams(WRAP_CONTENT, context.dp(36)).apply { marginEnd = context.dp(10) })
                 addView(inputsPill, LinearLayout.LayoutParams(WRAP_CONTENT, context.dp(36)))
-                addView(gear, LinearLayout.LayoutParams(context.dp(36), context.dp(36)).apply { marginStart = context.dp(10) })
+                addView(androidSettings, LinearLayout.LayoutParams(WRAP_CONTENT, context.dp(36)).apply { marginStart = context.dp(10) })
+                addView(gear, LinearLayout.LayoutParams(WRAP_CONTENT, context.dp(36)).apply { marginStart = context.dp(10) })
             })
             addView(FrameLayout(context).apply {
                 addView(panel, LayoutParams(context.dp(372), WRAP_CONTENT, Gravity.TOP or Gravity.END))
@@ -221,6 +221,12 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
             rightMargin = context.dp(Tokens.OVERSCAN_H)
             topMargin = context.dp(Tokens.OVERSCAN_V)
         })
+
+        // Remote paths with no dead ends: the forecast card leads up to the bar and right to the panel.
+        for (v in listOf(wifiPill, soundTile, volume, forecast)) v.id = View.generateViewId()
+        forecast.nextFocusUpId = wifiPill.id
+        forecast.nextFocusRightId = soundTile.id
+        wifiPill.nextFocusDownId = forecast.id
 
         // The drop-down closes once focus leaves it and its pill, like a menu.
         viewTreeObserver.addOnGlobalFocusChangeListener { _, focused ->
@@ -241,6 +247,18 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
         main.removeCallbacks(tick)
         main.removeCallbacks(homeShimmer)
         super.onDetachedFromWindow()
+    }
+
+    /**
+     * Up from anywhere in the dock lands on the controls above, the forecast card on the left
+     * half and the volume slider on the right, so the top is one press away from every app.
+     */
+    fun focusFromDock(dockFocus: View): Boolean {
+        val loc = IntArray(2)
+        dockFocus.getLocationOnScreen(loc)
+        val left = loc[0] + dockFocus.width / 2 < resources.displayMetrics.widthPixels / 2
+        val target = if (left && forecast.visibility == View.VISIBLE) forecast else volume
+        return target.requestFocus()
     }
 
     /** Back closes the inputs drop-down; true when the key was used. */

@@ -260,4 +260,6 @@
     <string name="dock_glow_help">A soft glow under the apps in the dock</string>
     <string name="sky_wifi_on">%1$s · Connected</string>
     <string name="sky_files">Files</string>
+    <string name="sky_app_settings">Launcher</string>
+    <string name="sky_android_settings">Android</string>
 </resources>
