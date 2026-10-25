@@ -32,7 +32,7 @@ class Config {
     var layout: String = LAYOUT_SKY
     var cardSize: String = "medium"
     var accent: String = Accents.default
-    var wallpaper: String = WALLPAPER_SKY
+    var wallpaper: String = "gradient"
     var dim: String = "medium"
     var showLabels = false
     var showDescriptions = true

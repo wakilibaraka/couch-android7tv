@@ -63,7 +63,7 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
     private var palette = PALETTES.getValue("day")
     private var weather: WeatherNow? = null
     private val time = TextView(context).apply {
-        textSize = 84f
+        textSize = 76f
         typeface = Fonts.clock(context)
         includeFontPadding = false
         setShadowLayer(context.dpf(14f), 0f, context.dpf(2f), 0x40000000)
@@ -77,15 +77,15 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
 
     private val date = TextClock(context).apply {
         showLongDate()
-        textSize = 19f
-        typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+        textSize = 17f
+        typeface = Fonts.hanken(context, 600)
         setTextColor(Tokens.textPrimary)
         setShadowLayer(context.dpf(8f), 0f, context.dpf(1f), 0x59000000)
     }
     private val weatherIcon = ImageView(context)
     private val weatherText = TextView(context).apply {
-        textSize = 19f
-        typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+        textSize = 17f
+        typeface = Fonts.hanken(context, 600)
         setTextColor(Tokens.textPrimary)
         setShadowLayer(context.dpf(8f), 0f, context.dpf(1f), 0x59000000)
     }
@@ -105,8 +105,9 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
         // Selectable: its icons play while it has focus, and rest otherwise.
         isFocusable = true
         background = StateListDrawable().apply {
-            addState(intArrayOf(android.R.attr.state_focused), (Glass.panel(context, 22f, 0x47FFFFFF) as GradientDrawable).apply { setStroke(context.dp(2), 0xE6FFFFFF.toInt()) })
-            addState(intArrayOf(), Glass.panel(context, 22f))
+            // A deep gradient under the text, so it reads on any background.
+            addState(intArrayOf(android.R.attr.state_focused), forecastCard(context).apply { setStroke(context.dp(2), 0xE6FFFFFF.toInt()) })
+            addState(intArrayOf(), forecastCard(context).apply { setStroke(context.dp(1), Glass.EDGE) })
         }
         setOnFocusChangeListener { _, focused -> playForecast(focused) }
         setPadding(context.dp(12), context.dp(10), context.dp(12), context.dp(10))
@@ -120,10 +121,7 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
     // The top-right bar and the inputs drop-down.
     private val inputsPill: LinearLayout = Glass.pill(context, R.drawable.ic_input, context.getString(R.string.sky_inputs)) {
         toggleInputs()
-    }.apply {
-        addView(Glass.icon(context, R.drawable.ic_expand, 16), LinearLayout.LayoutParams(context.dp(16), context.dp(16)).apply { marginStart = context.dp(4) })
     }
-    private val wifiPill: LinearLayout = Glass.pill(context, R.drawable.ic_wifi, context.getString(R.string.quick_wifi)) { QuickActions.wifi(context) }
     private val gear = Glass.pill(context, R.drawable.ic_settings, context.getString(R.string.sky_app_settings)) { actions.settings() }
     private val androidSettings = Glass.pill(context, R.drawable.ic_tv, context.getString(R.string.sky_android_settings)) { QuickActions.settings(context) }
     private val inputMenu = LinearLayout(context).apply {
@@ -140,16 +138,19 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
     private val pictureTile = QuickTile(context, R.drawable.ic_picture, context.getString(R.string.quick_picture), context.getString(R.string.quick_picture_sub)) {
         QuickActions.picture(context) { mode -> it.subtitle.text = mode }
     }
-    private val themeTile = QuickTile(context, R.drawable.ic_photo, context.getString(R.string.sky_theme), "") { actions.nextTheme() }
+    private val wifiTile = QuickTile(context, R.drawable.ic_wifi, context.getString(R.string.quick_wifi), "") { QuickActions.wifi(context) }
     private val volume = VolumeSlider(context)
 
-    private val homeLabel = TextView(context).apply { typeface = Fonts.clock(context) }
-    private var homeStep = 0
-    private val homeShimmer = object : Runnable {
+    // Network speed, memory and storage under the panel, refreshed every few seconds.
+    private val status = TextView(context).apply {
+        typeface = Fonts.hanken(context, 500)
+        setTextColor(0xE6FFFFFF.toInt())
+    }
+    private val info = cloud.samlo.couch.data.SystemInfo(context)
+    private val statusTick = object : Runnable {
         override fun run() {
-            showHomeLabel()
-            homeStep++
-            main.postDelayed(this, HOME_STEP_MS)
+            showStatus()
+            main.postDelayed(this, STATUS_MS)
         }
     }
 
@@ -159,7 +160,7 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
             columnCount = 2
             addView(soundTile, tileParams())
             addView(pictureTile, tileParams())
-            addView(themeTile, tileParams())
+            addView(wifiTile, tileParams())
             addView(QuickTile(context, R.drawable.ic_moon, context.getString(R.string.quick_screensaver), context.getString(R.string.quick_screensaver_sub)) {
                 QuickActions.screensaver(context)
             }, tileParams())
@@ -167,10 +168,10 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
         addView(LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            addView(round(R.drawable.ic_photo, R.string.sky_next_photo) { actions.nextPhoto() }, roundParams())
-            addView(round(R.drawable.ic_folder, R.string.sky_files) { QuickActions.files(context) }, roundParams())
-            addView(round(R.drawable.ic_home, R.string.sky_home) { actions.home() }, roundParams())
-            addView(round(R.drawable.ic_refresh, R.string.sky_refresh) { actions.reload() }, roundParams())
+            addView(labelled(R.drawable.ic_apps, R.string.sky_apps) { QuickActions.apps(context) }, roundParams())
+            addView(labelled(R.drawable.ic_folder, R.string.sky_files) { QuickActions.files(context) }, roundParams())
+            addView(labelled(R.drawable.ic_home, R.string.sky_home) { actions.home() }, roundParams())
+            addView(labelled(R.drawable.ic_refresh, R.string.sky_refresh) { actions.reload() }, roundParams())
         }, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { topMargin = context.dp(4) })
         addView(LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -179,8 +180,8 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
             addView(round(R.drawable.ic_mute, R.string.sky_mute) { volume.toggleMute() },
                 LinearLayout.LayoutParams(context.dp(50), context.dp(50)).apply { marginEnd = context.dp(5) })
         }, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { topMargin = context.dp(6) })
-        addView(homeLabel.apply {
-            textSize = 15f
+        addView(status.apply {
+            textSize = 12f
             gravity = Gravity.CENTER
             setShadowLayer(context.dpf(6f), 0f, context.dpf(1f), 0x59000000)
         }, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { topMargin = context.dp(8) })
@@ -207,10 +208,9 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
             addView(LinearLayout(context).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER_VERTICAL
-                addView(wifiPill, LinearLayout.LayoutParams(WRAP_CONTENT, context.dp(36)).apply { marginEnd = context.dp(10) })
                 addView(inputsPill, LinearLayout.LayoutParams(WRAP_CONTENT, context.dp(36)))
-                addView(androidSettings, LinearLayout.LayoutParams(WRAP_CONTENT, context.dp(36)).apply { marginStart = context.dp(10) })
                 addView(gear, LinearLayout.LayoutParams(WRAP_CONTENT, context.dp(36)).apply { marginStart = context.dp(10) })
+                addView(androidSettings, LinearLayout.LayoutParams(WRAP_CONTENT, context.dp(36)).apply { marginStart = context.dp(10) })
             })
             addView(FrameLayout(context).apply {
                 addView(panel, LayoutParams(context.dp(372), WRAP_CONTENT, Gravity.TOP or Gravity.END))
@@ -223,10 +223,9 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
         })
 
         // Remote paths with no dead ends: the forecast card leads up to the bar and right to the panel.
-        for (v in listOf(wifiPill, soundTile, volume, forecast)) v.id = View.generateViewId()
-        forecast.nextFocusUpId = wifiPill.id
+        for (v in listOf(inputsPill, soundTile, volume, forecast)) v.id = View.generateViewId()
+        forecast.nextFocusUpId = inputsPill.id
         forecast.nextFocusRightId = soundTile.id
-        wifiPill.nextFocusDownId = forecast.id
 
         // The drop-down closes once focus leaves it and its pill, like a menu.
         viewTreeObserver.addOnGlobalFocusChangeListener { _, focused ->
@@ -239,13 +238,14 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
         super.onAttachedToWindow()
         main.removeCallbacks(tick)
         tick.run()
-        main.removeCallbacks(homeShimmer)
-        homeShimmer.run()
+        main.removeCallbacks(statusTick)
+        info.resetRates()
+        statusTick.run()
     }
 
     override fun onDetachedFromWindow() {
         main.removeCallbacks(tick)
-        main.removeCallbacks(homeShimmer)
+        main.removeCallbacks(statusTick)
         super.onDetachedFromWindow()
     }
 
@@ -289,7 +289,6 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
         this.timeFormat = timeFormat
         showTime()
         date.visibility = if (config.showDate) View.VISIBLE else View.GONE
-        themeTile.subtitle.text = if (config.photoTheme == SkyPhotos.WEATHER_THEME) context.getString(R.string.sky_theme_weather) else config.photoTheme
     }
 
     fun showWeather(now: WeatherNow?) {
@@ -333,10 +332,7 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
     /** Called on every return home: the volume may have changed while away. */
     fun refresh() {
         volume.refresh()
-        val wifi = QuickActions.wifiName(context)
-        (wifiPill.getChildAt(wifiPill.childCount - 1) as? TextView)?.text =
-            if (wifi != null) context.getString(R.string.sky_wifi_on, wifi) else context.getString(R.string.quick_wifi_off)
-        wifiPill.alpha = if (wifi == null) 0.6f else 1f
+        wifiTile.subtitle.text = QuickActions.wifiName(context) ?: context.getString(R.string.quick_wifi_off)
         showTime()
     }
 
@@ -354,15 +350,19 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
         time.text = spans
     }
 
-    /** "Home" in the clock's face, its colours stepping one letter along: a slow, cheap shimmer. */
-    private fun showHomeLabel() {
-        val text = context.getString(R.string.sky_home)
-        val spans = SpannableString(text)
-        val colors = HOME_COLORS
-        for (i in text.indices) {
-            spans.setSpan(ForegroundColorSpan(colors[(i + homeStep) % colors.size]), i, i + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+    /** "↓ 1.2 ↑ 0.3 MB/s · RAM 62% · 3.1 GB free". */
+    private fun showStatus() {
+        val r = info.read()
+        val rx = r.rxBytesPerSec
+        val tx = r.txBytesPerSec
+        val speed = if (rx == null || tx == null) "↓ – ↑ –" else {
+            val mega = maxOf(rx, tx) >= 1_000_000
+            val scale = if (mega) 1_048_576.0 else 1024.0
+            val f = { v: Long -> String.format(Locale.getDefault(), if (v / scale >= 100) "%.0f" else "%.1f", v / scale) }
+            "↓ ${f(rx)} ↑ ${f(tx)} " + if (mega) "MB/s" else "KB/s"
         }
-        homeLabel.text = spans
+        status.text = context.getString(R.string.sky_status, speed, r.memoryUsedPercent,
+            android.text.format.Formatter.formatShortFileSize(context, r.storageFreeBytes))
     }
 
     private fun toggleInputs() {
@@ -400,10 +400,15 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
     private fun dayColumn(day: WeatherDay) = column(
         weekday(day.date),
         day.condition.icon(true),
-        context.getString(R.string.sky_degrees, day.high),
-        context.getString(R.string.sky_degrees, day.low),
-        0xB3FFFFFF.toInt(),
+        context.getString(R.string.sky_high_low, day.high, day.low),
+        if (day.rainChance > 0) context.getString(R.string.sky_rain, day.rainChance) else " ",
+        RAIN,
     )
+
+    private fun forecastCard(context: Context) = GradientDrawable(
+        GradientDrawable.Orientation.TL_BR,
+        intArrayOf(0xD91E2A3E.toInt(), 0xD92C3B5A.toInt()),
+    ).apply { cornerRadius = context.dpf(22f) }
 
     private fun column(top: String, icon: Int, value: String, sub: String, subColor: Int) = LinearLayout(context).apply {
         orientation = LinearLayout.VERTICAL
@@ -414,7 +419,7 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
             setImageResource(icon)
             scaleType = ImageView.ScaleType.FIT_CENTER
         }, LinearLayout.LayoutParams(context.dp(26), context.dp(26)).apply { setMargins(0, context.dp(2), 0, context.dp(2)) })
-        addView(label(14f, "sans-serif-medium", Tokens.textPrimary, value))
+        addView(label(13f, "sans-serif-medium", Tokens.textPrimary, value))
         addView(label(11f, "sans-serif", subColor, sub))
     }
 
@@ -426,7 +431,7 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
 
     private fun label(size: Float, family: String, color: Int, value: String) = TextView(context).apply {
         textSize = size
-        typeface = Typeface.create(family, Typeface.NORMAL)
+        typeface = Fonts.hanken(context, if (family.endsWith("medium")) 600 else 400)
         setTextColor(color)
         includeFontPadding = false
         text = value
@@ -437,8 +442,18 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
         background = Glass.focusable(context, 25f)
     }
 
-    private fun roundParams() = LinearLayout.LayoutParams(0, context.dp(50), 1f).apply {
-        setMargins(context.dp(5), context.dp(5), context.dp(5), context.dp(5))
+    private fun roundParams() = LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f).apply {
+        setMargins(context.dp(5), context.dp(4), context.dp(5), 0)
+    }
+
+    /** A round button with its name under it, as on LG's home. */
+    private fun labelled(icon: Int, label: Int, onClick: () -> Unit) = LinearLayout(context).apply {
+        orientation = LinearLayout.VERTICAL
+        gravity = Gravity.CENTER_HORIZONTAL
+        addView(round(icon, label, onClick), LinearLayout.LayoutParams(context.dp(46), context.dp(46)))
+        addView(label(11f, "sans-serif", 0xE6FFFFFF.toInt(), context.getString(label)).apply {
+            setShadowLayer(context.dpf(4f), 0f, context.dpf(1f), 0x66000000)
+        }, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { topMargin = context.dp(4) })
     }
 
     private fun tileParams() = GridLayout.LayoutParams().apply {
@@ -472,7 +487,7 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
                 addView(TextView(context).apply {
                     text = title
                     textSize = 14f
-                    typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+                    typeface = Fonts.hanken(context, 600)
                     setTextColor(Glass.content)
                     isDuplicateParentStateEnabled = true
                     maxLines = 1
@@ -497,7 +512,7 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
         }
         private val value = TextView(context).apply {
             textSize = 14f
-            typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+            typeface = Fonts.hanken(context, 600)
             setTextColor(Glass.content)
             isDuplicateParentStateEnabled = true
         }
@@ -518,7 +533,7 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
                 addView(TextView(context).apply {
                     setText(R.string.sky_volume)
                     textSize = 14f
-                    typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+                    typeface = Fonts.hanken(context, 600)
                     setTextColor(Glass.content)
                     isDuplicateParentStateEnabled = true
                 }, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
@@ -566,10 +581,7 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
         const val COLON = 0xB3D0D6DC.toInt()
         const val RAIN = 0xFF9FD3FF.toInt()
         const val FORECAST = 7
-        const val HOME_STEP_MS = 900L
-        val HOME_COLORS = intArrayOf(
-            0xFFE5484D.toInt(), 0xFFFFB224.toInt(), 0xFFFFE066.toInt(), 0xFF46D39A.toInt(), 0xFF4FC3F7.toInt(), 0xFFB197FC.toInt(),
-        )
+        const val STATUS_MS = 3_000L
 
         /** Digit colours for each time of day, in turn; the first is the bold accent. */
         val PALETTES = mapOf(

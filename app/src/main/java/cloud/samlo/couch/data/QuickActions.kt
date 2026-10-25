@@ -59,6 +59,9 @@ object QuickActions {
 
     fun settings(context: Context) = open(context, Intent(Settings.ACTION_SETTINGS))
 
+    /** Android's list of installed apps. */
+    fun apps(context: Context) = open(context, Intent(Settings.ACTION_APPLICATION_SETTINGS))
+
     /** The TV's own file browser, else Android's Files. */
     fun files(context: Context) = open(
         context,

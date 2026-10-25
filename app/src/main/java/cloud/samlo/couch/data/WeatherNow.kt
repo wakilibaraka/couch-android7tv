@@ -95,9 +95,13 @@ class WeatherNow(
             val codes = hourly.optJSONArray("weather_code") ?: return emptyList()
             val rain = hourly.optJSONArray("precipitation_probability")
             val day = hourly.optJSONArray("is_day")
-            // ISO local times sort as text: the first hour after "now" is where the list starts.
-            val from = (0 until times.length()).firstOrNull { now.isNullOrEmpty() || times.getString(it) > now } ?: return emptyList()
-            return (from until minOf(times.length(), from + count)).mapNotNull { i ->
+            // ISO local times sort as text: the first even hour after "now" is where the list starts,
+            // then every second hour (02, 04, 06...).
+            val from = (0 until times.length()).firstOrNull {
+                (now.isNullOrEmpty() || times.getString(it) > now) &&
+                    (times.getString(it).substringAfter('T').substringBefore(':').toIntOrNull() ?: 0) % 2 == 0
+            } ?: return emptyList()
+            return (from until minOf(times.length(), from + count * 2) step 2).mapNotNull { i ->
                 if (temps.isNull(i) || codes.isNull(i)) return@mapNotNull null
                 val hour = times.getString(i).substringAfter('T').substringBefore(':').toIntOrNull() ?: return@mapNotNull null
                 WeatherHour(

@@ -27,8 +27,8 @@ object AppSource {
             .filter { it.activityInfo.packageName != context.packageName && it.activityInfo.packageName !in config.hiddenApps }
             .map { it to (config.names[it.activityInfo.packageName] ?: it.loadLabel(pm).toString()) }
             .sortedWith { (a, aLabel), (b, bLabel) ->
-                val ai = rank(config, a.activityInfo.packageName)
-                val bi = rank(config, b.activityInfo.packageName)
+                val ai = rank(config, a.activityInfo.packageName, aLabel)
+                val bi = rank(config, b.activityInfo.packageName, bLabel)
                 if (ai != bi) ai.compareTo(bi) else collator.compare(aLabel, bLabel)
             }
             .map { (info, label) -> tile(context, info, label, iconsDir, w, h, radius) }
@@ -40,7 +40,15 @@ object AppSource {
             .distinctBy { it.activityInfo.packageName }
 
     /** Position in the user's pinned list; unpinned apps sort after every pinned one. */
-    private fun rank(config: Config, pkg: String) = config.pinnedApps.indexOf(pkg).let { if (it < 0) Int.MAX_VALUE else it }
+    private fun rank(config: Config, pkg: String, label: String): Int {
+        val pinned = config.pinnedApps.indexOf(pkg)
+        if (pinned >= 0) return pinned
+        // Pinned names can miss the installed package, so the favourites are also matched by label.
+        val byLabel = LABEL_ORDER.indexOfFirst { label.contains(it, ignoreCase = true) }
+        return if (byLabel < 0) Int.MAX_VALUE else config.pinnedApps.size + byLabel
+    }
+
+    private val LABEL_ORDER = listOf("YouTube", "SmartTube", "TV Bro", "X-plore", "VLC", "LocalSend", "Aurora")
 
     private fun tile(context: Context, info: ResolveInfo, label: String, iconsDir: File?, w: Int, h: Int, radius: Float): Tile {
         val pm = context.packageManager
