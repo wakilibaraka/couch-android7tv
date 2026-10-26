@@ -39,6 +39,9 @@ class CardMenus(
             activity.getString(R.string.menu_rename) to { rename(tile) },
             activity.getString(R.string.menu_hide) to { hide(tile) },
             activity.getString(R.string.menu_app_info) to { appInfo(tile.packageName) },
+            tile.packageName?.let { pkg ->
+                activity.getString(R.string.menu_uninstall) to { uninstall(pkg) }
+            },
         )
         Tile.Kind.INPUT -> listOf(
             activity.getString(R.string.menu_rename) to { rename(tile) },
@@ -50,6 +53,7 @@ class CardMenus(
             listOf(
                 activity.getString(R.string.menu_open_app, app) to { openApp(pkg) },
                 activity.getString(R.string.menu_app_info) to { appInfo(pkg) },
+                activity.getString(R.string.menu_uninstall) to { uninstall(pkg) },
             )
         }
     }
@@ -87,9 +91,38 @@ class CardMenus(
 
     private fun appInfo(pkg: String?) {
         pkg ?: return
-        activity.startActivity(
-            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", pkg, null))
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-        )
+        try {
+            activity.startActivity(
+                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", pkg, null))
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            )
+        } catch (e: Exception) {
+            try {
+                activity.startActivity(
+                    Intent(Settings.ACTION_MANAGE_APPLICATIONS_SETTINGS)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                )
+            } catch (e2: Exception) {
+                android.widget.Toast.makeText(activity, R.string.quick_unavailable, android.widget.Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun uninstall(pkg: String) {
+        try {
+            activity.startActivity(
+                Intent(Intent.ACTION_DELETE, Uri.fromParts("package", pkg, null))
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            )
+        } catch (e: Exception) {
+            try {
+                activity.startActivity(
+                    Intent(Intent.ACTION_UNINSTALL_PACKAGE, Uri.parse("package:$pkg"))
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                )
+            } catch (e2: Exception) {
+                android.widget.Toast.makeText(activity, R.string.quick_unavailable, android.widget.Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 }

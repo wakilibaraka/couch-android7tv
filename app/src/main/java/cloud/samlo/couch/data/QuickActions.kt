@@ -62,6 +62,62 @@ object QuickActions {
     /** Android's list of installed apps. */
     fun apps(context: Context) = open(context, Intent(Settings.ACTION_APPLICATION_SETTINGS))
 
+    /** Opens the TV's App Store (Aptoide TV, Aurora Store, Play Store, or market search). */
+    fun appStore(context: Context) {
+        val candidates = listOf(
+            "cm.aptoidetv.pt",
+            "com.aurora.store",
+            "com.android.vending",
+            "com.google.android.finsky",
+        )
+        for (pkg in candidates) {
+            val intent = context.packageManager.getLeanbackLaunchIntentForPackage(pkg)
+                ?: context.packageManager.getLaunchIntentForPackage(pkg)
+            if (intent != null) {
+                open(context, intent)
+                return
+            }
+        }
+        open(context, Intent(Intent.ACTION_VIEW, android.net.Uri.parse("market://search?q=")), Intent(Settings.ACTION_APPLICATION_SETTINGS))
+    }
+
+    /** Opens the TV's native EShare app. */
+    fun eshare(context: Context) {
+        val candidates = listOf(
+            "com.ecloud.eshare.server",
+            "com.eshare.server",
+            "com.eshare.client",
+            "com.cvte.eshare",
+        )
+        for (pkg in candidates) {
+            val intent = context.packageManager.getLeanbackLaunchIntentForPackage(pkg)
+                ?: context.packageManager.getLaunchIntentForPackage(pkg)
+            if (intent != null) {
+                open(context, intent)
+                return
+            }
+        }
+        Toast.makeText(context, R.string.quick_unavailable, Toast.LENGTH_SHORT).show()
+    }
+
+    /** Opens the TV's native AirPlay app. */
+    fun airplay(context: Context) {
+        val candidates = listOf(
+            "com.ecloud.eairplay",
+            "com.airplay.server",
+            "com.ecloud.airplay",
+        )
+        for (pkg in candidates) {
+            val intent = context.packageManager.getLeanbackLaunchIntentForPackage(pkg)
+                ?: context.packageManager.getLaunchIntentForPackage(pkg)
+            if (intent != null) {
+                open(context, intent)
+                return
+            }
+        }
+        Toast.makeText(context, R.string.quick_unavailable, Toast.LENGTH_SHORT).show()
+    }
+
     /** The TV's own file browser, else Android's Files. */
     fun files(context: Context) = open(
         context,

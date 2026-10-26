@@ -258,11 +258,21 @@
     <string name="sky_rain">%1$d%%</string>
     <string name="dock_glow">App glow</string>
     <string name="dock_glow_help">A soft glow under the apps in the dock</string>
+    <string name="sky_style">Style</string>
+    <string name="sky_style_help">Neumorphic surfaces or Apple TV frosted glass</string>
+    <string name="style_neumorphic">Neumorphic</string>
+    <string name="style_glass">Glass</string>
     <string name="sky_wifi_on">%1$s · Connected</string>
     <string name="sky_files">Files</string>
     <string name="sky_app_settings">Launcher</string>
     <string name="sky_android_settings">Android</string>
     <string name="sky_high_low">%1$d°/%2$d°</string>
     <string name="sky_apps">Apps</string>
+    <string name="sky_store">Store</string>
+    <string name="sky_eshare">EShare</string>
+    <string name="sky_airplay">AirPlay</string>
+    <string name="menu_uninstall">Uninstall</string>
+    <string name="mode_standard">Standard</string>
+    <string name="mode_energy_saving">Energy Saving</string>
     <string name="sky_status">%1$s  ·  RAM %2$d%%  ·  %3$s free</string>
 </resources>
