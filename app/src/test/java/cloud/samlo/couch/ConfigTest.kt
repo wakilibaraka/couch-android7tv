@@ -19,7 +19,7 @@ class ConfigTest {
         assertEquals(Config.DEFAULT_PINNED, config.pinnedApps)
         assertTrue("com.sony.dtv.promos" in config.hiddenApps)
         assertEquals("medium", config.cardSize)
-        assertEquals("sky", config.layout)
+        assertEquals("rows", config.layout)
         assertEquals(Config.STYLE_NEUMORPHIC, config.style)
         assertEquals("", config.appStorePkg)
         assertEquals(5, config.ambientMinutes)
