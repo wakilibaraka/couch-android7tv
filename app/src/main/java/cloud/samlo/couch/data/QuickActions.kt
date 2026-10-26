@@ -64,12 +64,14 @@ object QuickActions {
 
     /** Opens the TV's App Store (Aptoide TV, Aurora Store, Play Store, or market search). */
     fun appStore(context: Context) {
-        val candidates = listOf(
+        val config = Config.load(context.filesDir)
+        val preferred = config.appStorePkg.takeIf { it.isNotEmpty() }
+        val candidates = listOfNotNull(preferred) + listOf(
             "cm.aptoidetv.pt",
             "com.aurora.store",
             "com.android.vending",
             "com.google.android.finsky",
-        )
+        ).filter { it != preferred }
         for (pkg in candidates) {
             val intent = context.packageManager.getLeanbackLaunchIntentForPackage(pkg)
                 ?: context.packageManager.getLaunchIntentForPackage(pkg)

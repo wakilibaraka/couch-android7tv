@@ -115,6 +115,7 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
 
     private val forecast = LinearLayout(context).apply {
         orientation = LinearLayout.VERTICAL
+        descendantFocusability = ViewGroup.FOCUS_BLOCK_DESCENDANTS
         isFocusable = true
         isClickable = true
         setPadding(context.dp(12), context.dp(8), context.dp(12), context.dp(8))
@@ -125,7 +126,7 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
     }
 
     // Top-right bar matching the 372 dp width of the quick panel below.
-    private val inputsPill = topBarPill(R.drawable.ic_input, context.getString(R.string.sky_inputs)) {
+    private val inputsPill = topBarPill(R.drawable.ic_input, "${context.getString(R.string.sky_inputs)} ▾") {
         toggleInputs()
     }
     private val launcherPill = topBarPill(R.drawable.ic_tune, context.getString(R.string.sky_app_settings)) {
@@ -247,11 +248,17 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
         })
 
         // D-pad Remote focus connections
-        for (v in listOf(inputsPill, launcherPill, androidPill, soundTile, volume, forecast)) v.id = View.generateViewId()
+        for (v in listOf(inputsPill, launcherPill, androidPill, soundTile, pictureTile, wifiTile, storeBtn, volume, forecast)) v.id = View.generateViewId()
         forecast.nextFocusUpId = inputsPill.id
         forecast.nextFocusRightId = soundTile.id
+        inputsPill.nextFocusLeftId = forecast.id
+        inputsPill.nextFocusDownId = soundTile.id
+        launcherPill.nextFocusDownId = soundTile.id
+        androidPill.nextFocusDownId = pictureTile.id
         soundTile.nextFocusLeftId = forecast.id
         soundTile.nextFocusUpId = launcherPill.id
+        wifiTile.nextFocusLeftId = forecast.id
+        storeBtn.nextFocusLeftId = forecast.id
 
         // The drop-down closes once focus leaves it and its pill
         viewTreeObserver.addOnGlobalFocusChangeListener { _, focused ->
@@ -355,15 +362,40 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
         for (day in now.days.drop(1).take(FORECAST)) {
             daysRow.addView(dayColumn(day), LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
         }
-        showingDays = false
-        hoursRow.visibility = if (hoursRow.childCount > 0) View.VISIBLE else View.GONE
-        daysRow.visibility = View.GONE
-        forecast.visibility = if (hoursRow.childCount + daysRow.childCount == 0) View.GONE else View.VISIBLE
+        if (hoursRow.childCount > 0) {
+            showingDays = false
+            hoursRow.visibility = View.VISIBLE
+            daysRow.visibility = View.GONE
+            forecast.visibility = View.VISIBLE
+        } else if (daysRow.childCount > 0) {
+            showingDays = true
+            hoursRow.visibility = View.GONE
+            daysRow.visibility = View.VISIBLE
+            forecast.visibility = View.VISIBLE
+        } else {
+            forecast.visibility = View.GONE
+        }
+        if (forecast.visibility == View.VISIBLE) {
+            main.removeCallbacks(weatherSlideTick)
+            main.postDelayed(weatherSlideTick, SLIDE_INTERVAL_MS)
+        }
         playForecast(forecast.hasFocus())
     }
 
     private fun toggleForecastSlide() {
-        if (hoursRow.childCount == 0 || daysRow.childCount == 0) return
+        if (hoursRow.childCount == 0 && daysRow.childCount == 0) return
+        if (hoursRow.childCount == 0) {
+            showingDays = true
+            hoursRow.visibility = View.GONE
+            daysRow.visibility = View.VISIBLE
+            return
+        }
+        if (daysRow.childCount == 0) {
+            showingDays = false
+            hoursRow.visibility = View.VISIBLE
+            daysRow.visibility = View.GONE
+            return
+        }
         showingDays = !showingDays
         hoursRow.visibility = if (showingDays) View.GONE else View.VISIBLE
         daysRow.visibility = if (showingDays) View.VISIBLE else View.GONE
@@ -545,6 +577,7 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
 
     fun updateStyle(style: String) {
         currentStyle = style
+        inputSignature = ""
         val isGlass = style == Config.STYLE_GLASS
         val content = if (isGlass) Glass.content else Neumorphic.content
         val contentMuted = if (isGlass) Glass.contentMuted else Neumorphic.contentMuted

@@ -21,6 +21,7 @@ class ConfigTest {
         assertEquals("medium", config.cardSize)
         assertEquals("sky", config.layout)
         assertEquals(Config.STYLE_NEUMORPHIC, config.style)
+        assertEquals("", config.appStorePkg)
         assertEquals(5, config.ambientMinutes)
         assertEquals(3, config.wallpaperHours)
         assertEquals(Config.DEFAULT_SUBREDDIT, config.subreddit)
@@ -40,6 +41,7 @@ class ConfigTest {
             layout = "index"
             cardSize = "large"
             style = Config.STYLE_GLASS
+            appStorePkg = "com.aurora.store"
             accent = "#34D399"
             wallpaper = "reddit"
             dim = "strong"
@@ -63,6 +65,7 @@ class ConfigTest {
         assertFalse(copy.showDescriptions)
         assertEquals("index", copy.layout)
         assertEquals(Config.STYLE_GLASS, copy.style)
+        assertEquals("com.aurora.store", copy.appStorePkg)
     }
 
     @Test

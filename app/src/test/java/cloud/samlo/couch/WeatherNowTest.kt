@@ -37,6 +37,19 @@ class WeatherNowTest {
         assertEquals(now.sunset, copy.sunset)
     }
 
+    @Test
+    fun hourlyForecastIsSpacedByTwoHours() {
+        val hourlyJson = org.json.JSONObject(
+            """{"time":["2026-10-26T01:00","2026-10-26T02:00","2026-10-26T03:00","2026-10-26T04:00","2026-10-26T05:00","2026-10-26T06:00","2026-10-26T07:00","2026-10-26T08:00","2026-10-26T09:00","2026-10-26T10:00","2026-10-26T11:00","2026-10-26T12:00","2026-10-26T13:00","2026-10-26T14:00"],""" +
+                """"temperature_2m":[15.0,16.0,17.0,18.0,19.0,20.0,21.0,22.0,23.0,24.0,25.0,26.0,27.0,28.0],""" +
+                """"weather_code":[0,1,2,3,0,1,2,3,0,1,2,3,0,1],""" +
+                """"precipitation_probability":[0,10,20,30,0,10,20,30,0,10,20,30,0,10]}"""
+        )
+        val hours = WeatherNow.hours(hourlyJson, "2026-10-26T01:30", count = 7)
+        assertEquals(7, hours.size)
+        assertEquals(listOf(2, 4, 6, 8, 10, 12, 14), hours.map { it.hour })
+    }
+
     private fun <T> assertNotNullAndGet(value: T?): T {
         assertNotNull(value)
         return value!!
