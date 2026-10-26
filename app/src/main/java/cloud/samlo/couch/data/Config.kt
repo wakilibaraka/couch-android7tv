@@ -29,7 +29,7 @@ class Config {
      * "sky" (Apple TV style: big clock, inputs on top, a glass dock over a weather photo), "rows"
      * (cards in rows) or "index" (a list of apps beside what the focused one offers).
      */
-    var layout: String = LAYOUT_SKY
+    var layout: String = LAYOUT_ROWS
     var cardSize: String = "medium"
     var style: String = STYLE_NEUMORPHIC
     var appStorePkg: String = ""
