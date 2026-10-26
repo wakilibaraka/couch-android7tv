@@ -60,9 +60,16 @@ class HomeLoader(
         loading = true
         checker.execute { if (updates.refresh(Config.load(files.dir))) main.post { load() } }
         executor.execute {
-            val data = build()
+            // A load that fails or finds nothing (packages not ready yet after boot) would leave
+            // home blank until the next resume, so it tries again shortly.
+            val data = try {
+                build()
+            } catch (e: Exception) {
+                null
+            }
             main.post {
-                onLoaded(data)
+                if (data != null) onLoaded(data)
+                if (data == null || (data.index == null && data.sections.isEmpty())) main.postDelayed({ load() }, RETRY_MS)
                 loading = false
                 if (reloadQueued) {
                     reloadQueued = false
@@ -89,5 +96,9 @@ class HomeLoader(
         val pictures = if (config.ambientMinutes > 0) wallpapers.all(config, files.dir, now) else emptyList()
         val inputs = if (sky) InputSource.tiles(context, config, null) else emptyList()
         return HomeData(config, wallpaper, pictures, now, sections, index, updates.pending(config), inputs)
+    }
+
+    private companion object {
+        const val RETRY_MS = 3000L
     }
 }
