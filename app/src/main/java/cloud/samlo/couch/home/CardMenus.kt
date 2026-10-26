@@ -39,7 +39,7 @@ class CardMenus(
             activity.getString(R.string.menu_rename) to { rename(tile) },
             activity.getString(R.string.menu_hide) to { hide(tile) },
             activity.getString(R.string.menu_app_info) to { appInfo(tile.packageName) },
-            tile.packageName?.let { pkg ->
+            tile.packageName?.takeIf { it != activity.packageName }?.let { pkg ->
                 activity.getString(R.string.menu_uninstall) to { uninstall(pkg) }
             },
         )

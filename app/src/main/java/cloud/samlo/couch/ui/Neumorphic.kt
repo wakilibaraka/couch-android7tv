@@ -37,7 +37,7 @@ object Neumorphic {
         val focused = GradientDrawable().apply {
             cornerRadius = context.dpf(radiusDp)
             setColor(FOCUS_FILL)
-            setStroke(context.dp(2), FOCUS_RING)
+            setStroke(context.dp(2), Tokens.accent)
         }
         addState(intArrayOf(android.R.attr.state_focused), focused)
         addState(intArrayOf(android.R.attr.state_pressed), focused)

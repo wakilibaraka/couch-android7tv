@@ -5,6 +5,7 @@ import android.provider.Settings
 import android.widget.Toast
 import cloud.samlo.couch.R
 import cloud.samlo.couch.data.Accents
+import cloud.samlo.couch.data.AppLabels
 import cloud.samlo.couch.data.Config
 import cloud.samlo.couch.data.Fetcher
 import cloud.samlo.couch.ui.Tokens
@@ -95,6 +96,16 @@ class MainPage(private val ctx: SettingsContext) : SettingsPage {
                 { config.style }, { config.style = it },
             )
             o.toggle(ctx.str(R.string.dock_glow), ctx.str(R.string.dock_glow_help), { config.dockGlow }, { config.dockGlow = it })
+            val stores = listOf("cm.aptoidetv.pt", "com.aurora.store", "com.android.vending", "com.google.android.finsky")
+                .filter { AppLabels.of(ctx.activity, it) != null }
+            if (stores.size > 1) {
+                o.choice(
+                    ctx.str(R.string.sky_store), ctx.str(R.string.store_app_help),
+                    listOf(Option(ctx.str(R.string.icon_auto_guess), "")) +
+                        stores.map { Option(AppLabels.of(ctx.activity, it) ?: it, it) },
+                    { config.appStorePkg }, { config.appStorePkg = it },
+                )
+            }
         }
     }
 
