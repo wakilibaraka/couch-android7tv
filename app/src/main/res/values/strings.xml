@@ -275,5 +275,11 @@
     <string name="menu_uninstall">Uninstall</string>
     <string name="mode_standard">Standard</string>
     <string name="mode_energy_saving">Energy Saving</string>
+    <string name="sky_launcher_settings">Launcher Settings</string>
+    <string name="sky_tv_settings">TV Settings</string>
+    <string name="weather_hourly">Hourly</string>
+    <string name="weather_daily">7-Day</string>
+    <string name="sky_range_hl">H: %1$d°  L: %2$d°</string>
+    <string name="quick_files_sub">File Manager</string>
     <string name="sky_status">%1$s  ·  RAM %2$d%%  ·  %3$s free</string>
 </resources>
