@@ -30,7 +30,7 @@ class Weather(private val fetcher: Fetcher, private val prefs: SharedPreferences
         return "https://api.open-meteo.com/v1/forecast?latitude=${place.latitude}&longitude=${place.longitude}" +
             "&current=temperature_2m,weather_code,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min," +
             "precipitation_probability_max,sunrise,sunset&forecast_days=8" +
-            "&hourly=temperature_2m,weather_code,precipitation_probability,is_day&forecast_hours=17&timezone=auto$unit"
+            "&hourly=temperature_2m,weather_code,precipitation_probability,is_day&forecast_hours=24&timezone=auto$unit"
     }
 
     private companion object {

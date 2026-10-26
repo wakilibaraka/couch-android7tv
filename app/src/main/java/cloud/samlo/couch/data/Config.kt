@@ -31,6 +31,7 @@ class Config {
      */
     var layout: String = LAYOUT_SKY
     var cardSize: String = "medium"
+    var style: String = STYLE_NEUMORPHIC
     var accent: String = Accents.default
     var wallpaper: String = "gradient"
     var dim: String = "medium"
@@ -68,7 +69,7 @@ class Config {
         }
 
     /** Changes whenever a setting that affects how cards are drawn changes. */
-    val look: String get() = "$cardSize|$accent|$showLabels"
+    val look: String get() = "$cardSize|$accent|$showLabels|$style"
 
     /** Written atomically so a half-written file never wipes the user's setup. */
     fun save(dir: File?) {
@@ -86,6 +87,8 @@ class Config {
         const val LAYOUT_ROWS = "rows"
         const val LAYOUT_INDEX = "index"
         const val LAYOUT_SKY = "sky"
+        const val STYLE_NEUMORPHIC = "neumorphic"
+        const val STYLE_GLASS = "glass"
         const val WALLPAPER_SKY = "sky"
         const val DEFAULT_CITY = "Ogembo, KE"
 

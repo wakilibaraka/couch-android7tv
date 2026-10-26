@@ -20,6 +20,7 @@ class ConfigTest {
         assertTrue("com.sony.dtv.promos" in config.hiddenApps)
         assertEquals("medium", config.cardSize)
         assertEquals("sky", config.layout)
+        assertEquals(Config.STYLE_NEUMORPHIC, config.style)
         assertEquals(5, config.ambientMinutes)
         assertEquals(3, config.wallpaperHours)
         assertEquals(Config.DEFAULT_SUBREDDIT, config.subreddit)
@@ -38,6 +39,7 @@ class ConfigTest {
             channels = mapOf("7" to true, "8" to false)
             layout = "index"
             cardSize = "large"
+            style = Config.STYLE_GLASS
             accent = "#34D399"
             wallpaper = "reddit"
             dim = "strong"
@@ -60,6 +62,7 @@ class ConfigTest {
         assertEquals("Montréal", copy.weatherCity)
         assertFalse(copy.showDescriptions)
         assertEquals("index", copy.layout)
+        assertEquals(Config.STYLE_GLASS, copy.style)
     }
 
     @Test

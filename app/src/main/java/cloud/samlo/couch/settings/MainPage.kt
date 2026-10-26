@@ -86,6 +86,14 @@ class MainPage(private val ctx: SettingsContext) : SettingsPage {
         o.toggle(ctx.str(R.string.show_labels), ctx.str(R.string.show_labels_help), { config.showLabels }, { config.showLabels = it })
         o.toggle(ctx.str(R.string.show_descriptions), ctx.str(R.string.show_descriptions_help), { config.showDescriptions }, { config.showDescriptions = it })
         if (config.layout == Config.LAYOUT_SKY) {
+            o.choice(
+                ctx.str(R.string.sky_style), ctx.str(R.string.sky_style_help),
+                listOf(
+                    Option(ctx.str(R.string.style_neumorphic), Config.STYLE_NEUMORPHIC),
+                    Option(ctx.str(R.string.style_glass), Config.STYLE_GLASS),
+                ),
+                { config.style }, { config.style = it },
+            )
             o.toggle(ctx.str(R.string.dock_glow), ctx.str(R.string.dock_glow_help), { config.dockGlow }, { config.dockGlow = it })
         }
     }

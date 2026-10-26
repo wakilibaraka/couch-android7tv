@@ -14,17 +14,21 @@ import java.util.Locale
  */
 class Wallpapers(private val fetcher: Fetcher, private val prefs: SharedPreferences) {
 
-    fun current(config: Config, userDir: File?, weather: WeatherNow? = null): String? = when (config.wallpaper) {
-        "gradient" -> null
-        Config.WALLPAPER_SKY -> skyList(config, userDir, weather).let { SkyPhotos.ofHour(it) }?.path ?: daily()
-        "custom" -> userDir?.let { File(it, "wallpaper.jpg") }?.takeIf { it.isFile }?.path ?: daily()
-        "reddit" -> reddit(config) ?: daily()
-        else -> daily()
+    fun current(config: Config, userDir: File?, weather: WeatherNow? = null): String? {
+        val artPath = art(userDir).firstOrNull()
+        return when (config.wallpaper) {
+            "gradient" -> artPath
+            "art" -> artPath ?: daily()
+            Config.WALLPAPER_SKY -> skyList(config, userDir, weather).let { SkyPhotos.ofHour(it) }?.path ?: artPath ?: daily()
+            "custom" -> userDir?.let { File(it, "wallpaper.jpg") }?.takeIf { it.isFile }?.path ?: artPath ?: daily()
+            "reddit" -> reddit(config) ?: artPath ?: daily()
+            else -> artPath ?: daily()
+        }
     }
 
-    /** Every candidate for the source, for ambient mode to cycle through. */
+    /** Every candidate for ambient mode (screensaver) to cycle through: uses default sources, not the artwork. */
     fun all(config: Config, userDir: File?, weather: WeatherNow? = null): List<String> =
-        art(userDir).ifEmpty { sources(config, userDir, weather) }
+        sources(config, userDir, weather).ifEmpty { listOfNotNull(daily()) }
 
     /** Paintings saved in files/art, shown by ambient mode before any other source. */
     private fun art(userDir: File?): List<String> =
