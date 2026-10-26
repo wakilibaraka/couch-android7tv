@@ -150,9 +150,17 @@ class HomeScreen(private val activity: Activity) {
 
     /** True when the key was consumed (waking from ambient, or reorder mode). */
     fun consumesKey(event: KeyEvent) = ambientMode.consumesKey(event) || organizer.consumesKey(event) ||
+        menuOpensSettings(event) ||
         (views.skyShown && views.sky.consumesKey(event)) ||
         (views.skyShown && event.keyCode == KeyEvent.KEYCODE_DPAD_UP && upFromDock(event)) ||
         (views.indexShown && views.index.consumesKey(event))
+
+    /** The remote's MENU key opens the launcher settings. */
+    private fun menuOpensSettings(event: KeyEvent): Boolean {
+        if (event.keyCode != KeyEvent.KEYCODE_MENU) return false
+        if (event.action == KeyEvent.ACTION_UP) openSettings()
+        return true
+    }
 
     /** Up from the dock (the first row) jumps to the sky controls, from any app in it. */
     private fun upFromDock(event: KeyEvent): Boolean {
