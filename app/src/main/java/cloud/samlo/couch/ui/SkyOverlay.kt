@@ -20,7 +20,6 @@ import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.FrameLayout
-import android.widget.GridLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextClock
@@ -41,10 +40,8 @@ import java.util.Locale
 
 /**
  * Modern Neumorphic sky home: tactile surfaces with high readability from 3 meters away.
- * Single-row slideshowing weather forecast (hours spaced by 2h alternating with 7 days),
- * perfectly symmetrical 372 dp top bar matching the 2x2 panel below, dedicated App Store,
- * Files, EShare, and AirPlay shortcuts, and full support for both Neumorphic (default) and
- * Glass style presets.
+ * Apple-style unified weather widget with city, temperature hero, condition badge, two-dot
+ * hourly vs daily indicator, 2-pill symmetrical top bar, and 4-row quick panel with inline TV inputs.
  */
 @SuppressLint("ViewConstructor")
 class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(context) {
@@ -84,22 +81,62 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
         setTextColor(Tokens.textPrimary)
         setShadowLayer(context.dpf(8f), 0f, context.dpf(1f), 0x59000000)
     }
-    private val weatherIcon = ImageView(context)
-    private val weatherText = TextView(context).apply {
-        textSize = 17f
+
+    // --- Apple-Style Unified Weather Widget ---
+    private val weatherCity = TextView(context).apply {
+        textSize = 18f
         typeface = Fonts.hanken(context, 600)
-        setTextColor(Tokens.textPrimary)
-        setShadowLayer(context.dpf(8f), 0f, context.dpf(1f), 0x59000000)
+        setTextColor(0xCCFFFFFF.toInt())
     }
-    private val weatherLine = LinearLayout(context).apply {
+    private val weatherTemp = TextView(context).apply {
+        textSize = 48f
+        typeface = Fonts.hanken(context, 700)
+        setTextColor(0xFFFFFFFF.toInt())
+        includeFontPadding = false
+    }
+    private val weatherRange = TextView(context).apply {
+        textSize = 13f
+        typeface = Fonts.hanken(context, 500)
+        setTextColor(0x80FFFFFF.toInt())
+    }
+    private val weatherIcon = ImageView(context).apply {
+        scaleType = ImageView.ScaleType.FIT_CENTER
+    }
+    private val weatherCondition = TextView(context).apply {
+        textSize = 14f
+        typeface = Fonts.hanken(context, 600)
+        setTextColor(0xFFFFFFFF.toInt())
+    }
+    private val weatherBadge = LinearLayout(context).apply {
         orientation = LinearLayout.HORIZONTAL
         gravity = Gravity.CENTER_VERTICAL
-        visibility = View.GONE
-        addView(weatherIcon, LinearLayout.LayoutParams(context.dp(24), context.dp(24)).apply { marginEnd = context.dp(8) })
-        addView(weatherText)
+        setPadding(context.dp(8), context.dp(4), context.dp(10), context.dp(4))
+        background = GradientDrawable().apply {
+            cornerRadius = context.dpf(12f)
+            setColor(0x14FFFFFF)
+        }
+        addView(weatherIcon, LinearLayout.LayoutParams(context.dp(20), context.dp(20)).apply { marginEnd = context.dp(6) })
+        addView(weatherCondition)
+    }
+    private val modeLabel = TextView(context).apply {
+        text = context.getString(R.string.weather_hourly)
+        textSize = 11f
+        typeface = Fonts.hanken(context, 700)
+        setTextColor(0x80FFFFFF.toInt())
+    }
+    private val dot1 = View(context)
+    private val dot2 = View(context)
+    private val paginationDots = LinearLayout(context).apply {
+        orientation = LinearLayout.HORIZONTAL
+        gravity = Gravity.CENTER_VERTICAL
+        addView(modeLabel, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { marginEnd = context.dp(6) })
+        addView(dot1, LinearLayout.LayoutParams(context.dp(7), context.dp(7)))
+        addView(dot2, LinearLayout.LayoutParams(context.dp(7), context.dp(7)).apply { marginStart = context.dp(5) })
+    }
+    private val weatherDivider = View(context).apply {
+        setBackgroundColor(0x1AFFFFFF)
     }
 
-    // The forecast card: single-row slideshow alternating between 7 hours (2h intervals) and 7 days.
     private val hoursRow = LinearLayout(context).apply { orientation = LinearLayout.HORIZONTAL }
     private val daysRow = LinearLayout(context).apply { orientation = LinearLayout.HORIZONTAL }
     private val forecastContent = FrameLayout(context).apply {
@@ -114,14 +151,44 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
         }
     }
 
-    private val forecast = LinearLayout(context).apply {
+    private val weatherCard = LinearLayout(context).apply {
         orientation = LinearLayout.VERTICAL
         descendantFocusability = ViewGroup.FOCUS_BLOCK_DESCENDANTS
         isFocusable = true
         isClickable = true
-        setPadding(context.dp(12), context.dp(8), context.dp(12), context.dp(8))
+        setPadding(context.dp(18), context.dp(16), context.dp(18), context.dp(14))
         visibility = View.GONE
-        addView(forecastContent)
+
+        // Top Row: City & Temp on left, Badge & Pagination dots on right
+        addView(LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            addView(LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                addView(weatherCity)
+                addView(LinearLayout(context).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                    addView(weatherTemp)
+                    addView(weatherRange, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { marginStart = context.dp(8) })
+                })
+            }, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
+            addView(LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.END
+                addView(weatherBadge)
+                addView(paginationDots, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { topMargin = context.dp(6) })
+            })
+        })
+
+        // Divider
+        addView(weatherDivider, LinearLayout.LayoutParams(MATCH_PARENT, context.dp(1)).apply {
+            setMargins(0, context.dp(10), 0, context.dp(10))
+        })
+
+        // Bottom Row: 7-Item Forecast
+        addView(forecastContent, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
+
         setOnFocusChangeListener { _, focused -> playForecast(focused) }
         setOnClickListener {
             try {
@@ -131,36 +198,40 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
         }
     }
 
-    // Top-right bar matching the 372 dp width of the quick panel below.
-    private val inputsPill = topBarPill(R.drawable.ic_input, "${context.getString(R.string.sky_inputs)} ▾") {
-        try {
-            toggleInputs()
-        } catch (e: Throwable) {
-            Toast.makeText(context, R.string.quick_unavailable, Toast.LENGTH_SHORT).show()
-        }
-    }
-    private val launcherPill = topBarPill(R.drawable.ic_tune, context.getString(R.string.sky_app_settings)) {
+    // --- Top Bar: 2 Symmetrical Pills ---
+    private val launcherPill = topBarPill(R.drawable.ic_tune, context.getString(R.string.sky_launcher_settings)) {
         try {
             actions.settings()
         } catch (e: Throwable) {
             Toast.makeText(context, R.string.quick_unavailable, Toast.LENGTH_SHORT).show()
         }
     }
-    private val androidPill = topBarPill(R.drawable.ic_settings, context.getString(R.string.sky_android_settings)) {
+    private val tvSettingsPill = topBarPill(R.drawable.ic_settings, context.getString(R.string.sky_tv_settings)) {
         try {
-            QuickActions.settings(context)
+            QuickActions.tvSettings(context)
         } catch (e: Throwable) {
             Toast.makeText(context, R.string.quick_unavailable, Toast.LENGTH_SHORT).show()
         }
     }
 
-    private val inputMenu = LinearLayout(context).apply {
-        orientation = LinearLayout.VERTICAL
-        setPadding(context.dp(6), context.dp(6), context.dp(6), context.dp(6))
-        visibility = View.GONE
+    // --- Quick Panel: 4 Logical Rows ---
+    // Row 1: Wi-Fi, Files
+    private val wifiTile = QuickTile(context, R.drawable.ic_wifi, context.getString(R.string.quick_wifi), "") {
+        try {
+            QuickActions.wifi(context)
+        } catch (e: Throwable) {
+            Toast.makeText(context, R.string.quick_unavailable, Toast.LENGTH_SHORT).show()
+        }
     }
-    private var inputSignature = ""
+    private val filesTile = QuickTile(context, R.drawable.ic_folder, context.getString(R.string.sky_files), context.getString(R.string.section_files)) {
+        try {
+            QuickActions.files(context)
+        } catch (e: Throwable) {
+            Toast.makeText(context, R.string.quick_unavailable, Toast.LENGTH_SHORT).show()
+        }
+    }
 
+    // Row 2: Sound, Picture
     private val soundTile = QuickTile(context, R.drawable.ic_volume, context.getString(R.string.quick_sound), context.getString(R.string.mode_standard)) { tile ->
         try {
             QuickActions.sound(context) { mode ->
@@ -179,43 +250,16 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
             Toast.makeText(context, R.string.quick_unavailable, Toast.LENGTH_SHORT).show()
         }
     }
-    private val wifiTile = QuickTile(context, R.drawable.ic_wifi, context.getString(R.string.quick_wifi), "") {
-        try {
-            QuickActions.wifi(context)
-        } catch (e: Throwable) {
-            Toast.makeText(context, R.string.quick_unavailable, Toast.LENGTH_SHORT).show()
-        }
-    }
-    private val screensaverTile = QuickTile(context, R.drawable.ic_moon, context.getString(R.string.quick_screensaver), context.getString(R.string.quick_screensaver_sub)) {
-        try {
-            QuickActions.screensaver(context)
-        } catch (e: Throwable) {
-            Toast.makeText(context, R.string.quick_unavailable, Toast.LENGTH_SHORT).show()
-        }
-    }
 
-    private val storeBtn = round(R.drawable.ic_store, R.string.sky_store) {
-        try {
-            QuickActions.appStore(context)
-        } catch (e: Throwable) {
-            Toast.makeText(context, R.string.quick_unavailable, Toast.LENGTH_SHORT).show()
-        }
-    }
-    private val filesBtn = round(R.drawable.ic_folder, R.string.sky_files) {
-        try {
-            QuickActions.files(context)
-        } catch (e: Throwable) {
-            Toast.makeText(context, R.string.quick_unavailable, Toast.LENGTH_SHORT).show()
-        }
-    }
-    private val eshareBtn = round(R.drawable.ic_eshare, R.string.sky_eshare) {
+    // Row 3: EShare, AirPlay
+    private val eshareTile = QuickTile(context, R.drawable.ic_eshare, context.getString(R.string.sky_eshare), "Screen Mirror") {
         try {
             QuickActions.eshare(context)
         } catch (e: Throwable) {
             Toast.makeText(context, R.string.quick_unavailable, Toast.LENGTH_SHORT).show()
         }
     }
-    private val airplayBtn = round(R.drawable.ic_airplay, R.string.sky_airplay) {
+    private val airplayTile = QuickTile(context, R.drawable.ic_airplay, context.getString(R.string.sky_airplay), "Cast Receiver") {
         try {
             QuickActions.airplay(context)
         } catch (e: Throwable) {
@@ -223,13 +267,24 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
         }
     }
 
-    private val volume = VolumeSlider(context)
-    private val muteBtn = round(R.drawable.ic_mute, R.string.sky_mute) {
-        try {
-            volume.toggleMute()
-        } catch (e: Throwable) {
-        }
+    // Row 4: Inline TV Inputs Strip
+    private val inputsHeader = TextView(context).apply {
+        text = context.getString(R.string.sky_inputs).uppercase()
+        textSize = 11f
+        typeface = Fonts.hanken(context, 700)
+        setTextColor(0x80FFFFFF.toInt())
+        setPadding(context.dp(4), 0, 0, context.dp(4))
     }
+    private val inputsRow = LinearLayout(context).apply {
+        orientation = LinearLayout.HORIZONTAL
+    }
+    private val inputsSection = LinearLayout(context).apply {
+        orientation = LinearLayout.VERTICAL
+        visibility = View.GONE
+        addView(inputsHeader)
+        addView(inputsRow, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
+    }
+    private var inputSignature = ""
 
     // Network speed, memory and storage under the panel, refreshed every few seconds.
     private val status = TextView(context).apply {
@@ -249,27 +304,31 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
 
     private val panel = LinearLayout(context).apply {
         orientation = LinearLayout.VERTICAL
-        addView(GridLayout(context).apply {
-            columnCount = 2
-            addView(soundTile, tileParams())
-            addView(pictureTile, tileParams())
-            addView(wifiTile, tileParams())
-            addView(screensaverTile, tileParams())
+        val tileH = context.dp(56)
+        val rowGap = context.dp(8)
+        val tileGap = context.dp(4)
+
+        // Row 1: Wi-Fi, Files
+        addView(LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            addView(wifiTile, LinearLayout.LayoutParams(0, tileH, 1f).apply { marginEnd = tileGap })
+            addView(filesTile, LinearLayout.LayoutParams(0, tileH, 1f).apply { marginStart = tileGap })
         })
+        // Row 2: Sound, Picture
         addView(LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            addView(labelled(storeBtn, R.string.sky_store), roundParams())
-            addView(labelled(filesBtn, R.string.sky_files), roundParams())
-            addView(labelled(eshareBtn, R.string.sky_eshare), roundParams())
-            addView(labelled(airplayBtn, R.string.sky_airplay), roundParams())
-        }, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { topMargin = context.dp(6) })
+            addView(soundTile, LinearLayout.LayoutParams(0, tileH, 1f).apply { marginEnd = tileGap })
+            addView(pictureTile, LinearLayout.LayoutParams(0, tileH, 1f).apply { marginStart = tileGap })
+        }, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { topMargin = rowGap })
+        // Row 3: EShare, AirPlay
         addView(LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            addView(volume, LinearLayout.LayoutParams(0, context.dp(48), 1f).apply { setMargins(context.dp(5), 0, context.dp(10), 0) })
-            addView(muteBtn, LinearLayout.LayoutParams(context.dp(48), context.dp(48)).apply { marginEnd = context.dp(5) })
-        }, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { topMargin = context.dp(8) })
+            addView(eshareTile, LinearLayout.LayoutParams(0, tileH, 1f).apply { marginEnd = tileGap })
+            addView(airplayTile, LinearLayout.LayoutParams(0, tileH, 1f).apply { marginStart = tileGap })
+        }, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { topMargin = rowGap })
+        // Row 4: Inline TV Inputs
+        addView(inputsSection, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { topMargin = rowGap + context.dp(2) })
+        // Status line
         addView(status, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { topMargin = context.dp(8) })
     }
 
@@ -277,109 +336,121 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
     val dock = FlatView(context).apply { background = Neumorphic.panel(context, 24f) }
 
     init {
-        // Left Column: Clock, Date, Weather line, and compact single-row forecast
+        // Left Column: Clock, Date, Apple-Style Weather Card
         addView(LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             addView(time)
             addView(date, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { topMargin = context.dp(4) })
-            addView(weatherLine, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { topMargin = context.dp(4) })
-            addView(forecast, LinearLayout.LayoutParams(context.dp(420), WRAP_CONTENT).apply { topMargin = context.dp(12) })
+            addView(weatherCard, LinearLayout.LayoutParams(context.dp(480), WRAP_CONTENT).apply { topMargin = context.dp(18) })
         }, LayoutParams(WRAP_CONTENT, WRAP_CONTENT, Gravity.TOP or Gravity.START).apply {
             leftMargin = context.dp(Tokens.OVERSCAN_H)
             topMargin = context.dp(Tokens.OVERSCAN_V)
         })
 
-        // Right Column: Symmetrical 372 dp Top Bar & Quick Panel
+        // Right Column: Symmetrical 390 dp Top Bar (2 pills) & Quick Panel (4 rows)
+        val panelW = context.dp(390)
         addView(LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.END
             addView(LinearLayout(context).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER_VERTICAL
-                val h = context.dp(38)
-                addView(inputsPill, LinearLayout.LayoutParams(0, h, 1f).apply { marginEnd = context.dp(4) })
-                addView(launcherPill, LinearLayout.LayoutParams(0, h, 1f).apply { setMargins(context.dp(4), 0, context.dp(4), 0) })
-                addView(androidPill, LinearLayout.LayoutParams(0, h, 1f).apply { marginStart = context.dp(4) })
-            }, LinearLayout.LayoutParams(context.dp(372), WRAP_CONTENT))
-            addView(FrameLayout(context).apply {
-                addView(panel, LayoutParams(context.dp(372), WRAP_CONTENT, Gravity.TOP or Gravity.END))
-                addView(inputMenu, LayoutParams(context.dp(200), WRAP_CONTENT, Gravity.TOP or Gravity.END).apply { rightMargin = context.dp(46) })
-            }, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { topMargin = context.dp(10) })
+                val h = context.dp(42)
+                addView(launcherPill, LinearLayout.LayoutParams(0, h, 1f).apply { marginEnd = context.dp(5) })
+                addView(tvSettingsPill, LinearLayout.LayoutParams(0, h, 1f).apply { marginStart = context.dp(5) })
+            }, LinearLayout.LayoutParams(panelW, WRAP_CONTENT))
+            addView(panel, LinearLayout.LayoutParams(panelW, WRAP_CONTENT).apply { topMargin = context.dp(12) })
         }, LayoutParams(WRAP_CONTENT, WRAP_CONTENT, Gravity.TOP or Gravity.END).apply {
             rightMargin = context.dp(Tokens.OVERSCAN_H)
             topMargin = context.dp(Tokens.OVERSCAN_V)
         })
 
         // D-pad Remote focus connections
-        for (v in listOf(inputsPill, launcherPill, androidPill, soundTile, pictureTile, wifiTile, storeBtn, volume, forecast)) v.id = View.generateViewId()
-        forecast.nextFocusUpId = inputsPill.id
-        forecast.nextFocusRightId = soundTile.id
-        inputsPill.nextFocusLeftId = forecast.id
-        inputsPill.nextFocusDownId = soundTile.id
-        launcherPill.nextFocusDownId = soundTile.id
-        androidPill.nextFocusDownId = pictureTile.id
-        soundTile.nextFocusLeftId = forecast.id
-        soundTile.nextFocusUpId = launcherPill.id
-        wifiTile.nextFocusLeftId = forecast.id
-        storeBtn.nextFocusLeftId = forecast.id
-
-        // The drop-down closes once focus leaves it and its pill
-        viewTreeObserver.addOnGlobalFocusChangeListener { _, focused ->
-            if (inputMenu.visibility != View.VISIBLE) return@addOnGlobalFocusChangeListener
-            if (focused != null && focused !== inputsPill && !inputMenu.holds(focused)) closeInputs(focusPill = false)
+        for (v in listOf(launcherPill, tvSettingsPill, wifiTile, filesTile, soundTile, pictureTile, eshareTile, airplayTile, weatherCard)) {
+            v.id = View.generateViewId()
         }
+        weatherCard.nextFocusRightId = launcherPill.id
+        weatherCard.nextFocusUpId = launcherPill.id
 
-        updateStyle(Config.STYLE_NEUMORPHIC)
+        launcherPill.nextFocusLeftId = weatherCard.id
+        launcherPill.nextFocusRightId = tvSettingsPill.id
+        launcherPill.nextFocusDownId = wifiTile.id
+
+        tvSettingsPill.nextFocusLeftId = launcherPill.id
+        tvSettingsPill.nextFocusDownId = filesTile.id
+
+        wifiTile.nextFocusLeftId = weatherCard.id
+        wifiTile.nextFocusUpId = launcherPill.id
+        wifiTile.nextFocusRightId = filesTile.id
+        wifiTile.nextFocusDownId = soundTile.id
+
+        filesTile.nextFocusLeftId = wifiTile.id
+        filesTile.nextFocusUpId = tvSettingsPill.id
+        filesTile.nextFocusDownId = pictureTile.id
+
+        soundTile.nextFocusLeftId = weatherCard.id
+        soundTile.nextFocusUpId = wifiTile.id
+        soundTile.nextFocusRightId = pictureTile.id
+        soundTile.nextFocusDownId = eshareTile.id
+
+        pictureTile.nextFocusLeftId = soundTile.id
+        pictureTile.nextFocusUpId = filesTile.id
+        pictureTile.nextFocusDownId = airplayTile.id
+
+        eshareTile.nextFocusLeftId = weatherCard.id
+        eshareTile.nextFocusUpId = soundTile.id
+        eshareTile.nextFocusRightId = airplayTile.id
+
+        airplayTile.nextFocusLeftId = eshareTile.id
+        airplayTile.nextFocusUpId = pictureTile.id
+
+        updateDots()
     }
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        main.removeCallbacks(tick)
         tick.run()
-        main.removeCallbacks(statusTick)
-        info.resetRates()
         statusTick.run()
-        main.removeCallbacks(weatherSlideTick)
-        main.postDelayed(weatherSlideTick, SLIDE_INTERVAL_MS)
+        if (forecastContent.visibility == View.VISIBLE) main.postDelayed(weatherSlideTick, SLIDE_INTERVAL_MS)
     }
 
     override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
         main.removeCallbacks(tick)
         main.removeCallbacks(statusTick)
         main.removeCallbacks(weatherSlideTick)
-        super.onDetachedFromWindow()
     }
 
     /**
-     * Up from anywhere in the dock lands on the controls above:
-     * the forecast card on the left half and the volume slider on the right half.
+     * Up from the dock jumps directly to the sky controls:
+     * the weather card on the left half and the inline inputs/panel on the right half.
      */
     fun focusFromDock(dockFocus: View): Boolean {
         val loc = IntArray(2)
         dockFocus.getLocationOnScreen(loc)
         val left = loc[0] + dockFocus.width / 2 < resources.displayMetrics.widthPixels / 2
-        val target = if (left && forecast.visibility == View.VISIBLE) forecast else volume
+        val target = if (left && weatherCard.visibility == View.VISIBLE) {
+            weatherCard
+        } else {
+            inputsRow.getChildAt(0) ?: wifiTile
+        }
         return target.requestFocus()
     }
 
-    /** Back closes the inputs drop-down; true when the key was used. */
-    fun consumesKey(event: KeyEvent): Boolean {
-        if (inputMenu.visibility != View.VISIBLE || event.keyCode != KeyEvent.KEYCODE_BACK) return false
-        if (event.action == KeyEvent.ACTION_UP) closeInputs()
-        return true
-    }
+    fun consumesKey(event: KeyEvent): Boolean = false
 
-    /** The TV's inputs in the drop-down. */
+    /** The TV's inputs displayed directly in the inline strip. */
     fun showInputs(tiles: List<Tile>) {
         val signature = tiles.joinToString(";") { it.signature }
         if (signature == inputSignature) return
         inputSignature = signature
-        inputMenu.removeAllViews()
+        inputsRow.removeAllViews()
         val isGlass = currentStyle == Config.STYLE_GLASS
+        inputsSection.visibility = if (tiles.isEmpty()) View.GONE else View.VISIBLE
+
         for (tile in tiles) {
-            val pill = if (isGlass) {
+            val chip = if (isGlass) {
                 Glass.pill(context, tile.iconRes.takeIf { it != 0 } ?: R.drawable.ic_input, tile.label) {
-                    closeInputs(focusPill = false)
                     try {
                         tile.launch(context)
                     } catch (e: Throwable) {
@@ -388,7 +459,6 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
                 }
             } else {
                 Neumorphic.pill(context, tile.iconRes.takeIf { it != 0 } ?: R.drawable.ic_input, tile.label) {
-                    closeInputs(focusPill = false)
                     try {
                         tile.launch(context)
                     } catch (e: Throwable) {
@@ -396,12 +466,22 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
                     }
                 }
             }
-            if (tile.dimmed) pill.alpha = 0.55f
-            inputMenu.addView(pill, LinearLayout.LayoutParams(MATCH_PARENT, context.dp(40)).apply {
-                setMargins(context.dp(4), context.dp(3), context.dp(4), context.dp(3))
+            if (tile.dimmed) chip.alpha = 0.55f
+            inputsRow.addView(chip, LinearLayout.LayoutParams(0, context.dp(38), 1f).apply {
+                setMargins(context.dp(3), 0, context.dp(3), 0)
             })
         }
-        inputsPill.visibility = if (tiles.isEmpty()) View.GONE else View.VISIBLE
+
+        // Link focus down from Row 3 to the input chips
+        if (inputsRow.childCount > 0) {
+            val first = inputsRow.getChildAt(0)
+            val last = inputsRow.getChildAt(inputsRow.childCount - 1)
+            eshareTile.nextFocusDownId = first.id
+            airplayTile.nextFocusDownId = last.id
+            for (i in 0 until inputsRow.childCount) {
+                inputsRow.getChildAt(i).nextFocusUpId = if (i < inputsRow.childCount / 2) eshareTile.id else airplayTile.id
+            }
+        }
     }
 
     fun applyLook(config: Config, timeFormat: String) {
@@ -415,15 +495,15 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
         weather = now
         showTime()
         if (now == null) {
-            weatherLine.visibility = View.GONE
-            forecast.visibility = View.GONE
+            weatherCard.visibility = View.GONE
             return
         }
+        weatherCity.text = now.place
+        weatherTemp.text = context.getString(R.string.sky_degrees, now.temperature)
+        weatherRange.text = context.getString(R.string.sky_range_hl, now.high, now.low)
         weatherIcon.setImageResource(now.icon)
+        weatherCondition.text = if (now.condition.label != 0) context.getString(now.condition.label) else ""
         if (animating) (weatherIcon.drawable as? Animatable)?.start()
-        val label = if (now.condition.label != 0) context.getString(now.condition.label) else ""
-        weatherText.text = context.getString(R.string.weather_line, now.temperature, label, now.place)
-        weatherLine.visibility = View.VISIBLE
 
         hoursRow.removeAllViews()
         for (hour in now.hours.take(FORECAST)) {
@@ -433,24 +513,27 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
         for (day in now.days.drop(1).take(FORECAST)) {
             daysRow.addView(dayColumn(day), LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
         }
+
         if (hoursRow.childCount > 0) {
             showingDays = false
             hoursRow.visibility = View.VISIBLE
             daysRow.visibility = View.GONE
-            forecast.visibility = View.VISIBLE
+            weatherCard.visibility = View.VISIBLE
         } else if (daysRow.childCount > 0) {
             showingDays = true
             hoursRow.visibility = View.GONE
             daysRow.visibility = View.VISIBLE
-            forecast.visibility = View.VISIBLE
+            weatherCard.visibility = View.VISIBLE
         } else {
-            forecast.visibility = View.GONE
+            weatherCard.visibility = View.GONE
         }
-        if (forecast.visibility == View.VISIBLE) {
+        updateDots()
+
+        if (weatherCard.visibility == View.VISIBLE) {
             main.removeCallbacks(weatherSlideTick)
             main.postDelayed(weatherSlideTick, SLIDE_INTERVAL_MS)
         }
-        playForecast(forecast.hasFocus())
+        playForecast(weatherCard.hasFocus())
     }
 
     private fun toggleForecastSlide() {
@@ -459,18 +542,35 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
             showingDays = true
             hoursRow.visibility = View.GONE
             daysRow.visibility = View.VISIBLE
+            updateDots()
             return
         }
         if (daysRow.childCount == 0) {
             showingDays = false
             hoursRow.visibility = View.VISIBLE
             daysRow.visibility = View.GONE
+            updateDots()
             return
         }
         showingDays = !showingDays
         hoursRow.visibility = if (showingDays) View.GONE else View.VISIBLE
         daysRow.visibility = if (showingDays) View.VISIBLE else View.GONE
-        playForecast(forecast.hasFocus())
+        updateDots()
+        playForecast(weatherCard.hasFocus())
+    }
+
+    private fun updateDots() {
+        val activeDot = GradientDrawable().apply {
+            shape = GradientDrawable.OVAL
+            setColor(Tokens.accent)
+        }
+        val inactiveDot = GradientDrawable().apply {
+            shape = GradientDrawable.OVAL
+            setColor(0x40FFFFFF)
+        }
+        dot1.background = if (showingDays) inactiveDot else activeDot
+        dot2.background = if (showingDays) activeDot else inactiveDot
+        modeLabel.text = context.getString(if (showingDays) R.string.weather_daily else R.string.weather_hourly)
     }
 
     private fun playForecast(on: Boolean) {
@@ -489,7 +589,6 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
     }
 
     fun refresh() {
-        volume.refresh()
         wifiTile.subtitle.text = QuickActions.wifiName(context) ?: context.getString(R.string.quick_wifi_off)
         showTime()
     }
@@ -523,33 +622,6 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
         )
     }
 
-    private fun toggleInputs() {
-        if (inputMenu.visibility == View.VISIBLE) {
-            closeInputs()
-            return
-        }
-        if (inputMenu.childCount == 0) {
-            Toast.makeText(context, R.string.quick_unavailable, Toast.LENGTH_SHORT).show()
-            return
-        }
-        inputMenu.fadeIn()
-        inputMenu.post { inputMenu.getChildAt(0)?.requestFocus() }
-    }
-
-    private fun closeInputs(focusPill: Boolean = true) {
-        inputMenu.visibility = View.GONE
-        if (focusPill) inputsPill.requestFocus()
-    }
-
-    private fun ViewGroup.holds(view: View): Boolean {
-        var v: View? = view
-        while (v != null) {
-            if (v === this) return true
-            v = v.parent as? View
-        }
-        return false
-    }
-
     private fun hourColumn(hour: WeatherHour) = column(
         String.format(Locale.ROOT, "%02d:00", hour.hour),
         hour.icon,
@@ -569,7 +641,7 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
     private fun forecastCard(context: Context) = GradientDrawable(
         GradientDrawable.Orientation.TL_BR,
         intArrayOf(0xD91E2A3E.toInt(), 0xD92C3B5A.toInt()),
-    ).apply { cornerRadius = context.dpf(18f) }
+    ).apply { cornerRadius = context.dpf(20f) }
 
     private fun column(top: String, icon: Int, value: String, sub: String, subColor: Int) = LinearLayout(context).apply {
         orientation = LinearLayout.VERTICAL
@@ -597,35 +669,6 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
         text = value
     }
 
-    private fun round(icon: Int, label: Int, onClick: () -> Unit) = ImageView(context).apply {
-        setImageResource(icon)
-        scaleType = ImageView.ScaleType.FIT_CENTER
-        contentDescription = context.getString(label)
-        isFocusable = true
-        isClickable = true
-        setPadding(context.dp(12), context.dp(12), context.dp(12), context.dp(12))
-        setOnClickListener { onClick() }
-    }
-
-    private fun roundParams() = LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f).apply {
-        setMargins(context.dp(4), context.dp(4), context.dp(4), 0)
-    }
-
-    private fun labelled(btn: View, labelRes: Int) = LinearLayout(context).apply {
-        orientation = LinearLayout.VERTICAL
-        gravity = Gravity.CENTER_HORIZONTAL
-        addView(btn, LinearLayout.LayoutParams(context.dp(46), context.dp(46)))
-        addView(label(11f, "sans-serif", 0xE6FFFFFF.toInt(), context.getString(labelRes)).apply {
-            setShadowLayer(context.dpf(4f), 0f, context.dpf(1f), 0x66000000)
-        }, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { topMargin = context.dp(4) })
-    }
-
-    private fun tileParams() = GridLayout.LayoutParams().apply {
-        width = context.dp(176)
-        height = context.dp(54)
-        setMargins(context.dp(5), context.dp(5), context.dp(5), context.dp(5))
-    }
-
     private fun topBarPill(iconRes: Int, text: String, onClick: () -> Unit) = LinearLayout(context).apply {
         orientation = LinearLayout.HORIZONTAL
         gravity = Gravity.CENTER
@@ -638,7 +681,7 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
         }
         val label = TextView(context).apply {
             this.text = text
-            textSize = 13f
+            textSize = 14f
             typeface = Fonts.hanken(context, 600)
             isDuplicateParentStateEnabled = true
             maxLines = 1
@@ -657,39 +700,31 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
         val contentMuted = if (isGlass) Glass.contentMuted else Neumorphic.contentMuted
 
         // Top bar pills
-        for (pill in listOf(inputsPill, launcherPill, androidPill)) {
-            pill.background = if (isGlass) Glass.focusable(context, 14f) else Neumorphic.focusable(context, 12f)
+        for (pill in listOf(launcherPill, tvSettingsPill)) {
+            pill.background = if (isGlass) Glass.focusable(context, 16f) else Neumorphic.focusable(context, 14f)
             (pill.getChildAt(0) as? ImageView)?.imageTintList = content
             (pill.getChildAt(1) as? TextView)?.setTextColor(content)
         }
 
-        // Forecast card
-        forecast.background = if (isGlass) {
+        // Apple-style Weather card
+        weatherCard.background = if (isGlass) {
             StateListDrawable().apply {
                 addState(intArrayOf(android.R.attr.state_focused), forecastCard(context).apply { setStroke(context.dp(2), 0xE6FFFFFF.toInt()) })
                 addState(intArrayOf(), forecastCard(context).apply { setStroke(context.dp(1), Glass.EDGE) })
             }
         } else {
-            Neumorphic.focusable(context, 18f)
+            Neumorphic.focusable(context, 22f)
         }
 
         // Quick tiles
-        for (tile in listOf(soundTile, pictureTile, wifiTile, screensaverTile)) {
+        for (tile in listOf(wifiTile, filesTile, soundTile, pictureTile, eshareTile, airplayTile)) {
             tile.restyle(isGlass)
         }
 
-        // Round action buttons
-        for (btn in listOf(storeBtn, filesBtn, eshareBtn, airplayBtn, muteBtn)) {
-            btn.background = if (isGlass) Glass.focusable(context, 23f) else Neumorphic.focusable(context, 23f)
-            btn.imageTintList = content
-        }
-
-        // Volume slider
-        volume.restyle(isGlass)
-
-        // Dock & drop-down panel
+        // Dock & panel
         dock.background = if (isGlass) Glass.panel(context, 28f, 0x24FFFFFF) else Neumorphic.panel(context, 24f)
-        inputMenu.background = if (isGlass) Glass.panel(context, 22f, 0xB3202428.toInt()) else Neumorphic.panel(context, 18f)
+        panel.background = if (isGlass) Glass.panel(context, 24f, 0x33FFFFFF) else Neumorphic.panel(context, 24f)
+        updateDots()
     }
 
     /** A quick-settings tile: icon, title and full subtitle written out without truncation. */
@@ -738,109 +773,12 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
         }
 
         fun restyle(isGlass: Boolean) {
-            background = if (isGlass) Glass.focusable(context, 27f) else Neumorphic.focusable(context, 16f)
+            background = if (isGlass) Glass.focusable(context, 16f) else Neumorphic.focusable(context, 16f)
             val content = if (isGlass) Glass.content else Neumorphic.content
             val contentMuted = if (isGlass) Glass.contentMuted else Neumorphic.contentMuted
             iconView.imageTintList = content
             title.setTextColor(content)
             subtitle.setTextColor(contentMuted)
-        }
-    }
-
-    /** Volume slider with proportional visual fill and remote D-pad step adjustment. */
-    private class VolumeSlider(context: Context) : FrameLayout(context) {
-        private val fill = FlatView(context).apply { isDuplicateParentStateEnabled = true }
-        private val iconView = ImageView(context).apply {
-            setImageResource(R.drawable.ic_volume)
-            scaleType = ImageView.ScaleType.FIT_CENTER
-            isDuplicateParentStateEnabled = true
-        }
-        private val titleView = TextView(context).apply {
-            setText(R.string.sky_volume)
-            textSize = 14f
-            typeface = Fonts.hanken(context, 600)
-            isDuplicateParentStateEnabled = true
-        }
-        private val value = TextView(context).apply {
-            textSize = 14f
-            typeface = Fonts.hanken(context, 600)
-            isDuplicateParentStateEnabled = true
-        }
-        private var level = 0
-
-        init {
-            isFocusable = true
-            isClickable = true
-            contentDescription = context.getString(R.string.sky_volume)
-            addView(fill, LayoutParams(0, MATCH_PARENT))
-            addView(LinearLayout(context).apply {
-                orientation = LinearLayout.HORIZONTAL
-                gravity = Gravity.CENTER_VERTICAL
-                isDuplicateParentStateEnabled = true
-                setPadding(context.dp(14), 0, context.dp(16), 0)
-                addView(iconView, LinearLayout.LayoutParams(context.dp(22), context.dp(22)).apply { marginEnd = context.dp(10) })
-                addView(titleView, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
-                addView(value)
-            }, fill())
-            addOnLayoutChangeListener { _, l, _, r, _, ol, _, or_, _ -> if (r - l != or_ - ol) placeFill() }
-            restyle(false)
-        }
-
-        fun restyle(isGlass: Boolean) {
-            background = if (isGlass) Glass.focusable(context, 24f) else Neumorphic.focusable(context, 16f)
-            val content = if (isGlass) Glass.content else Neumorphic.content
-            iconView.imageTintList = content
-            titleView.setTextColor(content)
-            value.setTextColor(content)
-            fill.background = StateListDrawable().apply {
-                if (isGlass) {
-                    addState(intArrayOf(android.R.attr.state_focused), rounded(context, 0x2615171A, 24f))
-                    addState(intArrayOf(), rounded(context, 0x33FFFFFF, 24f))
-                } else {
-                    addState(intArrayOf(android.R.attr.state_focused), rounded(context, 0x4060A5FA.toInt(), 16f))
-                    addState(intArrayOf(), rounded(context, 0x24FFFFFF, 16f))
-                }
-            }
-        }
-
-        fun refresh() = try {
-            show(QuickActions.volume(context))
-        } catch (e: Throwable) {
-        }
-
-        fun toggleMute() = try {
-            show(QuickActions.toggleMute(context))
-        } catch (e: Throwable) {
-        }
-
-        override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean = when (keyCode) {
-            KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT -> {
-                show(QuickActions.adjustVolume(context, keyCode == KeyEvent.KEYCODE_DPAD_RIGHT))
-                true
-            }
-            else -> super.onKeyDown(keyCode, event)
-        }
-
-        override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean =
-            keyCode == KeyEvent.KEYCODE_DPAD_LEFT || keyCode == KeyEvent.KEYCODE_DPAD_RIGHT || super.onKeyUp(keyCode, event)
-
-        private fun show(percent: Int) {
-            level = percent.coerceIn(0, 100)
-            value.text = level.toString()
-            placeFill()
-        }
-
-        private fun rounded(context: Context, color: Int, radiusDp: Float) = GradientDrawable().apply {
-            cornerRadius = context.dpf(radiusDp)
-            setColor(color)
-        }
-
-        private fun placeFill() {
-            val params = fill.layoutParams
-            val w = width * level / 100
-            if (params.width == w) return
-            params.width = w
-            fill.layoutParams = params
         }
     }
 
