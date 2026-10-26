@@ -280,5 +280,6 @@
     <string name="weather_hourly">Hourly</string>
     <string name="weather_daily">7-Day</string>
     <string name="sky_range_hl">H: %1$d°  L: %2$d°</string>
+    <string name="quick_files_sub">File Manager</string>
     <string name="sky_status">%1$s  ·  RAM %2$d%%  ·  %3$s free</string>
 </resources>

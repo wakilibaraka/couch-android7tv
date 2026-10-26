@@ -223,7 +223,7 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
             Toast.makeText(context, R.string.quick_unavailable, Toast.LENGTH_SHORT).show()
         }
     }
-    private val filesTile = QuickTile(context, R.drawable.ic_folder, context.getString(R.string.sky_files), context.getString(R.string.section_files)) {
+    private val filesTile = QuickTile(context, R.drawable.ic_folder, context.getString(R.string.sky_files), context.getString(R.string.quick_files_sub)) {
         try {
             QuickActions.files(context)
         } catch (e: Throwable) {
