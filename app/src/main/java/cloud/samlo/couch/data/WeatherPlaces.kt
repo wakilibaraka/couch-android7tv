@@ -22,10 +22,24 @@ class WeatherPlaces(private val fetcher: Fetcher, private val prefs: SharedPrefe
             if (city.isBlank()) byIp() else byName(city)
         } catch (e: Exception) {
             null
-        } ?: return null
-        // An IP lookup can move (VPN, new ISP), so only a typed city is cached for good.
-        if (city.isNotBlank()) prefs.edit().putString(key, "${place.name}|${place.latitude}|${place.longitude}").apply()
+        } ?: fallbackPlace(city)
+
+        if (place != null) {
+            if (city.isNotBlank()) prefs.edit().putString(key, "${place.name}|${place.latitude}|${place.longitude}").apply()
+            prefs.edit().putString(LAST_KNOWN_KEY, "${place.name}|${place.latitude}|${place.longitude}").apply()
+        }
         return place
+    }
+
+    private fun fallbackPlace(city: String): Place? {
+        prefs.getString(LAST_KNOWN_KEY, null)?.let { cached ->
+            val parts = cached.split('|')
+            if (parts.size == 3) return Place(parts[0], parts[1].toDouble(), parts[2].toDouble())
+        }
+        if (city.isBlank() || city.contains("Ogembo", ignoreCase = true)) {
+            return Place("Ogembo", -0.7984, 34.7247)
+        }
+        return null
     }
 
     private fun byIp(): Place? {
@@ -43,5 +57,9 @@ class WeatherPlaces(private val fetcher: Fetcher, private val prefs: SharedPrefe
         val o = JSONObject(fetcher.text("https://geocoding-api.open-meteo.com/v1/search?name=$q&count=1$filter&language=${Locale.getDefault().language}") ?: return null)
         val r = o.optJSONArray("results")?.optJSONObject(0) ?: return null
         return Place(r.getString("name"), r.getDouble("latitude"), r.getDouble("longitude"))
+    }
+
+    private companion object {
+        const val LAST_KNOWN_KEY = "place:last_known"
     }
 }

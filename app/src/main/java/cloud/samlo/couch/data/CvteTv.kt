@@ -86,7 +86,10 @@ object CvteTv {
             } catch (e: Throwable) {
                 // The player still opens on whatever source was last shown.
             }
-            app.startActivity(playerIntent())
+            try {
+                app.startActivity(playerIntent())
+            } catch (e: Throwable) {
+            }
         }.start()
     }
 

@@ -77,7 +77,7 @@ class HomeScreen(private val activity: Activity) {
         onLongPress = { menus.show(it) },
     )
     private val loader = HomeLoader(
-        activity, files, Wallpapers(fetcher, prefs), Weather(fetcher, prefs), UpdateCheck(activity, fetcher), ::onLoaded,
+        activity, files, Wallpapers(fetcher, prefs), Weather(fetcher, prefs, activity.filesDir, files.dir), UpdateCheck(activity, fetcher), ::onLoaded,
     )
     private val watchers = SystemWatchers(activity, views.rows, { load() }) { offerInput(it) }
     private val reloadForRecommendations = Runnable { if (resumed) load() }
@@ -261,7 +261,11 @@ class HomeScreen(private val activity: Activity) {
 
     @Suppress("DEPRECATION")
     private fun openSettings() {
-        activity.startActivityForResult(Intent(activity, SettingsActivity::class.java), 1)
+        try {
+            activity.startActivityForResult(Intent(activity, SettingsActivity::class.java), 1)
+        } catch (e: Throwable) {
+            Toast.makeText(activity, R.string.quick_unavailable, Toast.LENGTH_SHORT).show()
+        }
     }
 
     private companion object {

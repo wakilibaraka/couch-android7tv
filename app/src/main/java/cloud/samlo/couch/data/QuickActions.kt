@@ -12,42 +12,57 @@ import cloud.samlo.couch.R
 /**
  * What the sky layout's quick-settings tiles open. Each tries the TV's own screen first (CVTE
  * boards have a picture and sound menu of their own) and falls back to Android's settings.
+ * All calls are guarded against crashes on unsupported boards or stripped Android 7 ROMs.
  */
 object QuickActions {
     private const val CVTE_SETTINGS = "com.cvte.tv.androidsetting"
 
-    fun wifi(context: Context) = open(context, Intent(Settings.ACTION_WIFI_SETTINGS))
+    fun wifi(context: Context) = open(context, Intent(Settings.ACTION_WIFI_SETTINGS), Intent(Settings.ACTION_SETTINGS))
 
     /** Picture mode: cycles TV modes on CVTE boards (P.MODE), or opens safe TV settings. */
     fun picture(context: Context, onModeChanged: ((String) -> Unit)? = null) {
         if (CvteTv.available(context)) {
-            CvteTv.cyclePicture(context) { mode ->
-                if (mode != null) {
-                    onModeChanged?.invoke(mode)
-                    Toast.makeText(context, mode, Toast.LENGTH_SHORT).show()
-                } else {
-                    open(context, CvteTv.settingIntent(), Intent(Settings.ACTION_DISPLAY_SETTINGS))
+            try {
+                CvteTv.cyclePicture(context) { mode ->
+                    if (mode != null) {
+                        onModeChanged?.invoke(mode)
+                        try {
+                            Toast.makeText(context, mode, Toast.LENGTH_SHORT).show()
+                        } catch (e: Throwable) {
+                        }
+                    } else {
+                        open(context, CvteTv.settingIntent(), Intent(Settings.ACTION_DISPLAY_SETTINGS), Intent(Settings.ACTION_SETTINGS))
+                    }
                 }
+                return
+            } catch (e: Throwable) {
+                // Fallback to settings below
             }
-            return
         }
-        open(context, CvteTv.settingIntent(), Intent(Settings.ACTION_DISPLAY_SETTINGS))
+        open(context, CvteTv.settingIntent(), Intent(Settings.ACTION_DISPLAY_SETTINGS), Intent(Settings.ACTION_SETTINGS))
     }
 
     /** Sound mode: cycles TV modes on CVTE boards (S.MODE), or opens safe TV settings. */
     fun sound(context: Context, onModeChanged: ((String) -> Unit)? = null) {
         if (CvteTv.available(context)) {
-            CvteTv.cycleSound(context) { mode ->
-                if (mode != null) {
-                    onModeChanged?.invoke(mode)
-                    Toast.makeText(context, mode, Toast.LENGTH_SHORT).show()
-                } else {
-                    open(context, CvteTv.settingIntent(), Intent(Settings.ACTION_SOUND_SETTINGS))
+            try {
+                CvteTv.cycleSound(context) { mode ->
+                    if (mode != null) {
+                        onModeChanged?.invoke(mode)
+                        try {
+                            Toast.makeText(context, mode, Toast.LENGTH_SHORT).show()
+                        } catch (e: Throwable) {
+                        }
+                    } else {
+                        open(context, CvteTv.settingIntent(), Intent(Settings.ACTION_SOUND_SETTINGS), Intent(Settings.ACTION_SETTINGS))
+                    }
                 }
+                return
+            } catch (e: Throwable) {
+                // Fallback to settings below
             }
-            return
         }
-        open(context, CvteTv.settingIntent(), Intent(Settings.ACTION_SOUND_SETTINGS))
+        open(context, CvteTv.settingIntent(), Intent(Settings.ACTION_SOUND_SETTINGS), Intent(Settings.ACTION_SETTINGS))
     }
 
     /** Starts the screensaver now (Android's own "start now" activity), or opens its settings. */
@@ -55,16 +70,23 @@ object QuickActions {
         context,
         Intent(Intent.ACTION_MAIN).setClassName("com.android.systemui", "com.android.systemui.Somnambulator"),
         Intent(Settings.ACTION_DREAM_SETTINGS),
+        Intent(Settings.ACTION_DISPLAY_SETTINGS),
+        Intent(Settings.ACTION_SETTINGS),
     )
 
-    fun settings(context: Context) = open(context, Intent(Settings.ACTION_SETTINGS))
+    fun settings(context: Context) = open(context, CvteTv.settingIntent(), Intent(Settings.ACTION_SETTINGS))
 
     /** Android's list of installed apps. */
-    fun apps(context: Context) = open(context, Intent(Settings.ACTION_APPLICATION_SETTINGS))
+    fun apps(context: Context) = open(
+        context,
+        Intent(Settings.ACTION_APPLICATION_SETTINGS),
+        Intent(Settings.ACTION_MANAGE_APPLICATIONS_SETTINGS),
+        Intent(Settings.ACTION_SETTINGS),
+    )
 
     /** Opens the TV's App Store (Aptoide TV, Aurora Store, Play Store, or market search). */
     fun appStore(context: Context) {
-        val config = Config.load(context.filesDir)
+        val config = try { Config.load(context.filesDir) } catch (e: Throwable) { Config() }
         val preferred = config.appStorePkg.takeIf { it.isNotEmpty() }
         val candidates = listOfNotNull(preferred) + listOf(
             "cm.aptoidetv.pt",
@@ -73,14 +95,22 @@ object QuickActions {
             "com.google.android.finsky",
         ).filter { it != preferred }
         for (pkg in candidates) {
-            val intent = context.packageManager.getLeanbackLaunchIntentForPackage(pkg)
-                ?: context.packageManager.getLaunchIntentForPackage(pkg)
-            if (intent != null) {
-                open(context, intent)
-                return
+            try {
+                val intent = context.packageManager.getLeanbackLaunchIntentForPackage(pkg)
+                    ?: context.packageManager.getLaunchIntentForPackage(pkg)
+                if (intent != null) {
+                    open(context, intent)
+                    return
+                }
+            } catch (e: Throwable) {
             }
         }
-        open(context, Intent(Intent.ACTION_VIEW, android.net.Uri.parse("market://search?q=")), Intent(Settings.ACTION_APPLICATION_SETTINGS))
+        open(
+            context,
+            Intent(Intent.ACTION_VIEW, android.net.Uri.parse("market://search?q=")),
+            Intent(Settings.ACTION_APPLICATION_SETTINGS),
+            Intent(Settings.ACTION_SETTINGS),
+        )
     }
 
     /** Opens the TV's native EShare app. */
@@ -92,14 +122,20 @@ object QuickActions {
             "com.cvte.eshare",
         )
         for (pkg in candidates) {
-            val intent = context.packageManager.getLeanbackLaunchIntentForPackage(pkg)
-                ?: context.packageManager.getLaunchIntentForPackage(pkg)
-            if (intent != null) {
-                open(context, intent)
-                return
+            try {
+                val intent = context.packageManager.getLeanbackLaunchIntentForPackage(pkg)
+                    ?: context.packageManager.getLaunchIntentForPackage(pkg)
+                if (intent != null) {
+                    open(context, intent)
+                    return
+                }
+            } catch (e: Throwable) {
             }
         }
-        Toast.makeText(context, R.string.quick_unavailable, Toast.LENGTH_SHORT).show()
+        try {
+            Toast.makeText(context, R.string.quick_unavailable, Toast.LENGTH_SHORT).show()
+        } catch (e: Throwable) {
+        }
     }
 
     /** Opens the TV's native AirPlay app. */
@@ -110,31 +146,46 @@ object QuickActions {
             "com.ecloud.airplay",
         )
         for (pkg in candidates) {
-            val intent = context.packageManager.getLeanbackLaunchIntentForPackage(pkg)
-                ?: context.packageManager.getLaunchIntentForPackage(pkg)
-            if (intent != null) {
-                open(context, intent)
-                return
+            try {
+                val intent = context.packageManager.getLeanbackLaunchIntentForPackage(pkg)
+                    ?: context.packageManager.getLaunchIntentForPackage(pkg)
+                if (intent != null) {
+                    open(context, intent)
+                    return
+                }
+            } catch (e: Throwable) {
             }
         }
-        Toast.makeText(context, R.string.quick_unavailable, Toast.LENGTH_SHORT).show()
+        try {
+            Toast.makeText(context, R.string.quick_unavailable, Toast.LENGTH_SHORT).show()
+        } catch (e: Throwable) {
+        }
     }
 
-    /** The TV's own file browser, else Android's Files. */
+    /** The TV's own file browser, else Android's Files or internal storage. */
     fun files(context: Context) = open(
         context,
         Intent(Intent.ACTION_MAIN).setClassName("com.cvte.filebrowser.activity", "com.cvte.filebrowser.activity.Guide1Activity"),
         Intent(Intent.ACTION_MAIN).setClassName("com.android.documentsui", "com.android.documentsui.LauncherActivity"),
+        Intent("android.intent.action.VIEW_DOWNLOADS"),
+        Intent(Settings.ACTION_INTERNAL_STORAGE_SETTINGS),
+        Intent(Settings.ACTION_SETTINGS),
     )
 
     /** The TV's own settings menu on CVTE boards, else Android's. */
     fun tvSettings(context: Context) = open(context, CvteTv.settingIntent(), Intent(Settings.ACTION_SETTINGS))
 
     /** Media volume as a percentage. */
-    fun volume(context: Context): Int {
-        val audio = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager ?: return 0
-        val max = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC).coerceAtLeast(1)
-        return audio.getStreamVolume(AudioManager.STREAM_MUSIC) * 100 / max
+    fun volume(context: Context): Int = try {
+        val audio = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+        if (audio != null) {
+            val max = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC).coerceAtLeast(1)
+            audio.getStreamVolume(AudioManager.STREAM_MUSIC) * 100 / max
+        } else {
+            0
+        }
+    } catch (e: Throwable) {
+        0
     }
 
     /** Mutes or unmutes media; returns the level now heard (0 while muted). */
@@ -142,10 +193,14 @@ object QuickActions {
         val audio = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager ?: return 0
         try {
             audio.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_TOGGLE_MUTE, 0)
-        } catch (e: SecurityException) {
+        } catch (e: Throwable) {
             return volume(context)
         }
-        return if (audio.isStreamMute(AudioManager.STREAM_MUSIC)) 0 else volume(context)
+        return try {
+            if (audio.isStreamMute(AudioManager.STREAM_MUSIC)) 0 else volume(context)
+        } catch (e: Throwable) {
+            volume(context)
+        }
     }
 
     /** One step up or down, as the remote's volume keys do; returns the new percentage. */
@@ -157,8 +212,7 @@ object QuickActions {
                 if (up) AudioManager.ADJUST_RAISE else AudioManager.ADJUST_LOWER,
                 0,
             )
-        } catch (e: SecurityException) {
-            // Do Not Disturb can refuse changes; the level shown stays truthful.
+        } catch (e: Throwable) {
         }
         return volume(context)
     }
@@ -168,12 +222,13 @@ object QuickActions {
         @Suppress("DEPRECATION")
         val info = (context.applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager)?.connectionInfo
         info?.ssid?.trim('"')?.takeIf { it.isNotEmpty() && it != "<unknown ssid>" && info.networkId != -1 }
-    } catch (e: SecurityException) {
+    } catch (e: Throwable) {
         null
     }
 
-    private fun open(context: Context, vararg intents: Intent) {
+    private fun open(context: Context, vararg intents: Intent?) {
         for (intent in intents) {
+            if (intent == null) continue
             try {
                 context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                 return
@@ -181,8 +236,13 @@ object QuickActions {
                 // Try the next one.
             } catch (e: SecurityException) {
                 // Not exported on this TV: try the next one.
+            } catch (e: Throwable) {
+                // Other runtime exceptions
             }
         }
-        Toast.makeText(context, R.string.quick_unavailable, Toast.LENGTH_SHORT).show()
+        try {
+            Toast.makeText(context, R.string.quick_unavailable, Toast.LENGTH_SHORT).show()
+        } catch (e: Throwable) {
+        }
     }
 }
