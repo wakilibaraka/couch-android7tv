@@ -44,26 +44,30 @@ class Tile(
 
     fun launch(context: Context) {
         if (action != null) {
-            action.invoke(context)
+            try {
+                action.invoke(context)
+            } catch (e: Throwable) {
+                failed(context)
+            }
             return
         }
         if (pendingIntent != null) {
             try {
                 pendingIntent.send()
                 return
-            } catch (e: PendingIntent.CanceledException) {
+            } catch (e: Throwable) {
                 // The app withdrew it: open the app instead.
             }
         }
         try {
             context.startActivity(intent)
-        } catch (e: ActivityNotFoundException) {
-            failed(context)
-        } catch (e: SecurityException) {
+        } catch (e: Throwable) {
             failed(context)
         }
     }
 
-    private fun failed(context: Context) =
+    private fun failed(context: Context) = try {
         Toast.makeText(context, context.getString(R.string.launch_failed, label), Toast.LENGTH_SHORT).show()
+    } catch (e: Throwable) {
+    }
 }

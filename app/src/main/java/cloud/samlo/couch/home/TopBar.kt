@@ -33,7 +33,7 @@ import cloud.samlo.couch.ui.showLongDate
 class TopBar(context: Context, onSettings: () -> Unit, onUpdate: () -> Unit) : LinearLayout(context) {
     val nowPlaying = NowPlaying(context)
     val inputOffer = InputChip(context)
-    val update = UpdateChip(context).apply { setOnClickListener { onUpdate() } }
+    val update = UpdateChip(context).apply { setOnClickListener { try { onUpdate() } catch (e: Throwable) {} } }
     private val weatherBox = LinearLayout(context)
     private val weatherIcon = ImageView(context)
     private val weatherTemp = text(30f, Tokens.textPrimary, "sans-serif-light")
@@ -122,7 +122,7 @@ class TopBar(context: Context, onSettings: () -> Unit, onUpdate: () -> Unit) : L
             })
             addState(intArrayOf(), GradientDrawable().apply { shape = GradientDrawable.OVAL })
         }
-        setOnClickListener { onSettings() }
+        setOnClickListener { try { onSettings() } catch (e: Throwable) {} }
     }
 
     private fun text(size: Float, color: Int, family: String?) = TextView(context).apply {

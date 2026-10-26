@@ -59,33 +59,55 @@ class CardMenus(
     }
 
     private fun rename(tile: Tile) {
-        val config = config()
-        Dialogs.text(activity, activity.getString(R.string.menu_rename), config.names[tile.key] ?: tile.label, tile.label) { name ->
-            config.names = if (name.isEmpty()) config.names - tile.key else config.names + (tile.key to name)
-            config.save(files.dir)
-            reload()
+        try {
+            val config = config()
+            Dialogs.text(activity, activity.getString(R.string.menu_rename), config.names[tile.key] ?: tile.label, tile.label) { name ->
+                try {
+                    config.names = if (name.isEmpty()) config.names - tile.key else config.names + (tile.key to name)
+                    config.save(files.dir)
+                    reload()
+                } catch (e: Throwable) {
+                }
+            }
+        } catch (e: Throwable) {
         }
     }
 
     /** The picker saves the choice; coming back to home reloads the row. */
     private fun pickIcon(tile: Tile) {
-        activity.startActivity(IconPickerActivity.intent(activity, tile.key, tile.label))
+        try {
+            activity.startActivity(IconPickerActivity.intent(activity, tile.key, tile.label))
+        } catch (e: Throwable) {
+            android.widget.Toast.makeText(activity, R.string.quick_unavailable, android.widget.Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun hide(tile: Tile) {
-        val config = config()
-        when (tile.kind) {
-            Tile.Kind.APP -> config.hiddenApps = config.hiddenApps + tile.key
-            Tile.Kind.INPUT -> config.hiddenInputs = config.hiddenInputs + tile.key
-            Tile.Kind.PROGRAM -> return
+        try {
+            val config = config()
+            when (tile.kind) {
+                Tile.Kind.APP -> config.hiddenApps = config.hiddenApps + tile.key
+                Tile.Kind.INPUT -> config.hiddenInputs = config.hiddenInputs + tile.key
+                Tile.Kind.PROGRAM -> return
+            }
+            config.save(files.dir)
+            reload()
+        } catch (e: Throwable) {
         }
-        config.save(files.dir)
-        reload()
     }
 
     private fun openApp(pkg: String) {
-        activity.packageManager.getLeanbackLaunchIntentForPackage(pkg)?.let {
-            activity.startActivity(it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        try {
+            val pm = activity.packageManager
+            val intent = pm.getLeanbackLaunchIntentForPackage(pkg)
+                ?: pm.getLaunchIntentForPackage(pkg)
+            if (intent != null) {
+                activity.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            } else {
+                android.widget.Toast.makeText(activity, activity.getString(R.string.launch_failed, pkg), android.widget.Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Throwable) {
+            android.widget.Toast.makeText(activity, activity.getString(R.string.launch_failed, pkg), android.widget.Toast.LENGTH_SHORT).show()
         }
     }
 

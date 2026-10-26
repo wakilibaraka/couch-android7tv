@@ -26,7 +26,7 @@ import cloud.samlo.couch.ui.dpf
 class IndexTopBar(context: Context, onInputs: () -> Unit, onSettings: () -> Unit, onUpdate: () -> Unit) : LinearLayout(context) {
     val nowPlaying = NowPlaying(context)
     val inputOffer = InputChip(context)
-    val update = UpdateChip(context).apply { setOnClickListener { onUpdate() } }
+    val update = UpdateChip(context).apply { setOnClickListener { try { onUpdate() } catch (e: Throwable) {} } }
     val inputs = pill(R.drawable.ic_pill_inputs, R.string.section_inputs, onInputs)
     val settings = pill(R.drawable.ic_pill_settings, R.string.settings, onSettings)
     private val weather = LinearLayout(context).apply {
@@ -86,7 +86,7 @@ class IndexTopBar(context: Context, onInputs: () -> Unit, onSettings: () -> Unit
             setColorFilter(IndexTokens.pillText)
         }, LayoutParams(context.dp(12), context.dp(12)).apply { marginEnd = context.dp(5) })
         addView(text(11f, 500, IndexTokens.pillText).apply { text = context.getString(label) })
-        setOnClickListener { onClick() }
+        setOnClickListener { try { onClick() } catch (e: Throwable) {} }
     }
 
     private fun shape(color: Int, stroke: Int?) = GradientDrawable().apply {

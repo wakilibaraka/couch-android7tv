@@ -122,18 +122,35 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
         visibility = View.GONE
         addView(forecastContent)
         setOnFocusChangeListener { _, focused -> playForecast(focused) }
-        setOnClickListener { toggleForecastSlide() }
+        setOnClickListener {
+            try {
+                toggleForecastSlide()
+            } catch (e: Throwable) {
+            }
+        }
     }
 
     // Top-right bar matching the 372 dp width of the quick panel below.
     private val inputsPill = topBarPill(R.drawable.ic_input, "${context.getString(R.string.sky_inputs)} ▾") {
-        toggleInputs()
+        try {
+            toggleInputs()
+        } catch (e: Throwable) {
+            Toast.makeText(context, R.string.quick_unavailable, Toast.LENGTH_SHORT).show()
+        }
     }
     private val launcherPill = topBarPill(R.drawable.ic_tune, context.getString(R.string.sky_app_settings)) {
-        actions.settings()
+        try {
+            actions.settings()
+        } catch (e: Throwable) {
+            Toast.makeText(context, R.string.quick_unavailable, Toast.LENGTH_SHORT).show()
+        }
     }
     private val androidPill = topBarPill(R.drawable.ic_settings, context.getString(R.string.sky_android_settings)) {
-        QuickActions.settings(context)
+        try {
+            QuickActions.settings(context)
+        } catch (e: Throwable) {
+            Toast.makeText(context, R.string.quick_unavailable, Toast.LENGTH_SHORT).show()
+        }
     }
 
     private val inputMenu = LinearLayout(context).apply {
@@ -144,29 +161,74 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
     private var inputSignature = ""
 
     private val soundTile = QuickTile(context, R.drawable.ic_volume, context.getString(R.string.quick_sound), context.getString(R.string.mode_standard)) { tile ->
-        QuickActions.sound(context) { mode ->
-            tile.subtitle.text = mode
+        try {
+            QuickActions.sound(context) { mode ->
+                tile.subtitle.text = mode
+            }
+        } catch (e: Throwable) {
+            Toast.makeText(context, R.string.quick_unavailable, Toast.LENGTH_SHORT).show()
         }
     }
     private val pictureTile = QuickTile(context, R.drawable.ic_picture, context.getString(R.string.quick_picture), context.getString(R.string.mode_standard)) { tile ->
-        QuickActions.picture(context) { mode ->
-            tile.subtitle.text = mode
+        try {
+            QuickActions.picture(context) { mode ->
+                tile.subtitle.text = mode
+            }
+        } catch (e: Throwable) {
+            Toast.makeText(context, R.string.quick_unavailable, Toast.LENGTH_SHORT).show()
         }
     }
     private val wifiTile = QuickTile(context, R.drawable.ic_wifi, context.getString(R.string.quick_wifi), "") {
-        QuickActions.wifi(context)
+        try {
+            QuickActions.wifi(context)
+        } catch (e: Throwable) {
+            Toast.makeText(context, R.string.quick_unavailable, Toast.LENGTH_SHORT).show()
+        }
     }
     private val screensaverTile = QuickTile(context, R.drawable.ic_moon, context.getString(R.string.quick_screensaver), context.getString(R.string.quick_screensaver_sub)) {
-        QuickActions.screensaver(context)
+        try {
+            QuickActions.screensaver(context)
+        } catch (e: Throwable) {
+            Toast.makeText(context, R.string.quick_unavailable, Toast.LENGTH_SHORT).show()
+        }
     }
 
-    private val storeBtn = round(R.drawable.ic_store, R.string.sky_store) { QuickActions.appStore(context) }
-    private val filesBtn = round(R.drawable.ic_folder, R.string.sky_files) { QuickActions.files(context) }
-    private val eshareBtn = round(R.drawable.ic_eshare, R.string.sky_eshare) { QuickActions.eshare(context) }
-    private val airplayBtn = round(R.drawable.ic_airplay, R.string.sky_airplay) { QuickActions.airplay(context) }
+    private val storeBtn = round(R.drawable.ic_store, R.string.sky_store) {
+        try {
+            QuickActions.appStore(context)
+        } catch (e: Throwable) {
+            Toast.makeText(context, R.string.quick_unavailable, Toast.LENGTH_SHORT).show()
+        }
+    }
+    private val filesBtn = round(R.drawable.ic_folder, R.string.sky_files) {
+        try {
+            QuickActions.files(context)
+        } catch (e: Throwable) {
+            Toast.makeText(context, R.string.quick_unavailable, Toast.LENGTH_SHORT).show()
+        }
+    }
+    private val eshareBtn = round(R.drawable.ic_eshare, R.string.sky_eshare) {
+        try {
+            QuickActions.eshare(context)
+        } catch (e: Throwable) {
+            Toast.makeText(context, R.string.quick_unavailable, Toast.LENGTH_SHORT).show()
+        }
+    }
+    private val airplayBtn = round(R.drawable.ic_airplay, R.string.sky_airplay) {
+        try {
+            QuickActions.airplay(context)
+        } catch (e: Throwable) {
+            Toast.makeText(context, R.string.quick_unavailable, Toast.LENGTH_SHORT).show()
+        }
+    }
 
     private val volume = VolumeSlider(context)
-    private val muteBtn = round(R.drawable.ic_mute, R.string.sky_mute) { volume.toggleMute() }
+    private val muteBtn = round(R.drawable.ic_mute, R.string.sky_mute) {
+        try {
+            volume.toggleMute()
+        } catch (e: Throwable) {
+        }
+    }
 
     // Network speed, memory and storage under the panel, refreshed every few seconds.
     private val status = TextView(context).apply {
@@ -317,12 +379,20 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
             val pill = if (isGlass) {
                 Glass.pill(context, tile.iconRes.takeIf { it != 0 } ?: R.drawable.ic_input, tile.label) {
                     closeInputs(focusPill = false)
-                    tile.launch(context)
+                    try {
+                        tile.launch(context)
+                    } catch (e: Throwable) {
+                        Toast.makeText(context, R.string.quick_unavailable, Toast.LENGTH_SHORT).show()
+                    }
                 }
             } else {
                 Neumorphic.pill(context, tile.iconRes.takeIf { it != 0 } ?: R.drawable.ic_input, tile.label) {
                     closeInputs(focusPill = false)
-                    tile.launch(context)
+                    try {
+                        tile.launch(context)
+                    } catch (e: Throwable) {
+                        Toast.makeText(context, R.string.quick_unavailable, Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
             if (tile.dimmed) pill.alpha = 0.55f
@@ -457,7 +527,10 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
             closeInputs()
             return
         }
-        if (inputMenu.childCount == 0) return
+        if (inputMenu.childCount == 0) {
+            Toast.makeText(context, R.string.quick_unavailable, Toast.LENGTH_SHORT).show()
+            return
+        }
         inputMenu.fadeIn()
         inputMenu.post { inputMenu.getChildAt(0)?.requestFocus() }
     }
@@ -729,9 +802,15 @@ class SkyOverlay(context: Context, private val actions: Actions) : FrameLayout(c
             }
         }
 
-        fun refresh() = show(QuickActions.volume(context))
+        fun refresh() = try {
+            show(QuickActions.volume(context))
+        } catch (e: Throwable) {
+        }
 
-        fun toggleMute() = show(QuickActions.toggleMute(context))
+        fun toggleMute() = try {
+            show(QuickActions.toggleMute(context))
+        } catch (e: Throwable) {
+        }
 
         override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean = when (keyCode) {
             KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT -> {
